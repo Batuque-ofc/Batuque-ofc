@@ -1,5 +1,5 @@
 import pygame
-from models.database import conectar_banco_de_dados, criar_tabela_usuario, inserir_usuario, consultar_usuario
+from models.database import conectar_banco_de_dados, criar_tabela_usuario, inserir_usuario, consultar_usuario, verifica_nome_usuario
 from models.model import Usuario
 
 bg_color = (240,248,255)
@@ -60,10 +60,13 @@ def registrar(tela, altura, largura):
                         if text2 == text3:
                             usuario = Usuario(text1, text2)
                             cnx = conectar_banco_de_dados()
-                            criar_tabela_usuario(cnx)
-                            inserir_usuario(cnx, usuario)
-                            print("Usuário registrado com sucesso!")
-                            registrar = False
+                            if(verifica_nome_usuario(cnx, text1)):
+                                print("Nome de usuário não disponível!")
+                                continue
+                            else:
+                                inserir_usuario(cnx, usuario)
+                                print("Usuário registrado com sucesso!")
+                                registrar = False
                         else:
                             print("Senha e confirmação de senha não são iguais!")
                     else:

@@ -54,6 +54,7 @@ def login(tela, altura, largura):
                         user_exists = consultar_usuario(cnx, text1, text2)
                         if user_exists:
                             print("Login bem-sucedido!")
+                            return True
                         else:
                             error_message = "Usuário ou senha incorretos"
                     else:

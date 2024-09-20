@@ -13,10 +13,13 @@ import screens.menu_resolucao as menu_resolucao
 pygame.init()
 
 # Definir as dimensões da janela
-largura = pygame.display.Info().current_w
-altura = pygame.display.Info().current_h
-tela = pygame.display.set_mode((largura, altura), pygame.SCALED)
+def criar_tela():
+    largura = pygame.display.Info().current_w
+    altura = pygame.display.Info().current_h
+    tela = pygame.display.set_mode((largura, altura), pygame.SCALED)
+    return tela, largura, altura
 
+tela, largura, altura = criar_tela()
 # Carregar imagens
 background_image = pygame.image.load("src/Images/tela inicial/imagem_de_fundo.png")
 logo_image = pygame.image.load("src/Images/tela inicial/logo.png")
@@ -201,7 +204,9 @@ def main():
                     if not configuracoes(tela):
                         plot_tela_inicial()
                 elif button_login_rect.collidepoint(event.pos):
-                    telaLogin.login(tela, altura, largura)
+                    logado = telaLogin.login(tela, altura, largura)
+                    if(logado):
+                        tocar(tela)
                     main()
                 elif button_registrar_rect.collidepoint(event.pos):
                     telaRegistro.registrar(tela, altura, largura)

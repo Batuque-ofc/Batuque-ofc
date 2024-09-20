@@ -52,8 +52,17 @@ def inserir_usuario(cnx, usuario):
 def consultar_usuario(cnx, usuario, senha):
     cursor = cnx.cursor()
     cursor.execute('''
-        SELECT * FROM usuarios WHERE usuario = %s AND senha = %s;
+        SELECT 1 FROM usuarios WHERE usuario = %s AND senha = %s;
     ''', (usuario, senha))
     result = cursor.fetchone()
     cursor.close()
     return result
+
+def verifica_nome_usuario(cnx, usuario):
+    cursor = cnx.cursor()
+    cursor.execute('''
+        SELECT count(1) FROM usuarios WHERE usuario = %s;
+    ''', (usuario,))
+    resultado = cursor.fetchone()[0]  # Fetch the result
+    cursor.close()  # Close the cursor
+    return resultado > 0  # Return True if the count is greater than 0
