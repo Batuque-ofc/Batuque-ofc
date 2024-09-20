@@ -1,4 +1,6 @@
 import pygame
+from models.database import conectar_banco_de_dados, criar_tabela_usuario, inserir_usuario, consultar_usuario
+from models.model import Usuario
 
 bg_color = (240,248,255)
 txt_color = (0,0,0)
@@ -52,9 +54,26 @@ def registrar(tela, altura, largura):
                 if button_return_rect.collidepoint(event.pos):
                     return False
 
+                # Lógica para finalizar o cadastro do botão registrar
+                if button_rect.collidepoint(event.pos):
+                    if text1 and text2 and text3:
+                        if text2 == text3:
+                            usuario = Usuario(text1, text2)
+                            cnx = conectar_banco_de_dados()
+                            criar_tabela_usuario(cnx)
+                            inserir_usuario(cnx, usuario)
+                            print("Usuário registrado com sucesso!")
+                            registrar = False
+                        else:
+                            print("Senha e confirmação de senha não são iguais!")
+                    else:
+                        print("Preencha todos os campos!")
+
+                # Atualização da cor
                 color1 = color_active if active1 else color_inactive
                 color2 = color_active if active2 else color_inactive
-                color3 = color_active if active3 else color_inactive  # Atualização da cor
+                color3 = color_active if active3 else color_inactive
+
             elif event.type == pygame.KEYDOWN:
                 if active1:
                     if event.key == pygame.K_RETURN:
@@ -113,3 +132,4 @@ def registrar(tela, altura, largura):
         tela.blit(texto_confirmar_senha, (input_box3.x, input_box3.y - 40))
         tela.blit(fonte.render("Cadastrar", True, txt_color), (button_rect.x + 125, button_rect.y + 10))
         pygame.display.flip()
+

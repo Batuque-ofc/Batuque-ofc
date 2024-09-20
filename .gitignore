@@ -1,0 +1,18 @@
+# Ignorar arquivos de ambiente e credenciais
+.env
+
+# Ignorar a pasta __pycache__ e arquivos .pyc
+__pycache__/
+*.pyc
+
+# Ignorar arquivos temporários
+*.log
+*.tmp
+
+# Ignorar pastas de build ou distribuição
+/build/
+dist/
+
+# Ignorar arquivos de configuração de IDE
+.vscode/
+.idea/
