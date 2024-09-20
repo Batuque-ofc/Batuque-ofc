@@ -189,11 +189,11 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                button_play_rect = button_play_image.get_rect(center=(largura // 2 - button_play_image.get_width() // 2, altura - button_play_image.get_height() - 225))
-                button_settings_rect = button_settings_image.get_rect(center=(largura // 2 - button_settings_image.get_width() // 2, altura - button_settings_image.get_height() - 150))
-                button_exit_rect = button_exit_image.get_rect(center=(largura // 2 - button_exit_image.get_width() // 2, altura - button_exit_image.get_height() - 75))
-                button_login_rect = button_login_image.get_rect(center=(largura // 2 - button_login_image.get_width() // 2, altura - button_login_image.get_height() - 375))
-                button_registrar_rect = button_registrar_image.get_rect(center=(largura // 2 - button_registrar_image.get_width() // 2, altura - button_registrar_image.get_height() - 300))
+                button_play_rect = button_play_image.get_rect(topleft=(largura // 2 - button_play_image.get_width() // 2, altura - button_play_image.get_height() - 225))
+                button_settings_rect = button_settings_image.get_rect(topleft=(largura // 2 - button_settings_image.get_width() // 2, altura - button_settings_image.get_height() - 150))
+                button_exit_rect = button_exit_image.get_rect(topleft=(largura // 2 - button_exit_image.get_width() // 2, altura - button_exit_image.get_height() - 75))
+                button_login_rect = button_login_image.get_rect(topleft=(largura // 2 - button_login_image.get_width() // 2, altura - button_login_image.get_height() - 375))
+                button_registrar_rect = button_registrar_image.get_rect(topleft=(largura // 2 - button_registrar_image.get_width() // 2, altura - button_registrar_image.get_height() - 300))
 
                 if button_play_rect.collidepoint(event.pos):
                     tocar(tela)

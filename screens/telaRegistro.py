@@ -12,7 +12,7 @@ def registrar(tela, altura, largura):
     input_box2 = pygame.Rect(largura // 2 - 200, altura // 1.5 - 125, 400, 50)
     input_box3 = pygame.Rect(largura // 2 - 200, altura // 1.5 - 25, 400, 50)  # Caixa de confirmação de senha
     button_rect = pygame.Rect(largura // 2 - 200, altura // 1.5 + 75, 400, 50)
-    button_return_rect = return_image.get_rect(center=(50, altura - return_image.get_height() - 750))
+    button_return_rect = return_image.get_rect(topleft=(50, altura - return_image.get_height() - 750))
     
     color_inactive = pygame.Color('lightskyblue3')
     color_active = pygame.Color('dodgerblue2')
