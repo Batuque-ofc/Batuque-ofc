@@ -9,6 +9,7 @@ import screens.telaLogin as telaLogin
 import screens.telaRegistro as telaRegistro
 import screens.menu_volume as menu_volume
 import screens.menu_resolucao as menu_resolucao
+from screens.configuracoes import configuracoes
 
 pygame.init()
 
@@ -20,6 +21,7 @@ def criar_tela():
     return tela, largura, altura
 
 tela, largura, altura = criar_tela()
+
 # Carregar imagens
 background_image = pygame.image.load("src/Images/tela inicial/imagem_de_fundo.png")
 logo_image = pygame.image.load("src/Images/tela inicial/logo.png")
@@ -130,57 +132,6 @@ def sair():
     pygame.quit()
     sys.exit()
 
-def configuracoes(screen):
-    """Abre o menu de configurações."""
-    fonte_titulo = pygame.font.Font(None, 48)
-    fonte_opcoes = pygame.font.Font(None, 36)
-    titulo = fonte_titulo.render("Configurações", True, BRANCO)
-
-    configurando = True
-    while configurando:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sair()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    configurando = False
-                    return False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
-                if 100 <= mouse_pos[0] <= 400 and 200 <= mouse_pos[1] <= 250:
-                    resolucao = menu_resolucao.config_resolucoes(screen)
-                    if not resolucao:
-                        plot_tela_inicial()
-                        return False
-                    pygame.display.set_mode(resolucao)
-                elif 100 <= mouse_pos[0] <= 400 and 300 <= mouse_pos[1] <= 350:
-                    volume = menu_volume.config_volume(screen)
-                    if not volume:
-                        plot_tela_inicial()
-                        return False
-                    pygame.mixer.music.set_volume(volume)
-                elif 100 <= mouse_pos[0] <= 400 and 400 <= mouse_pos[1] <= 450:
-                    return False
-
-        screen.fill(PRETO)
-        screen.blit(titulo, (100, 50))
-
-        pygame.draw.rect(screen, BRANCO, pygame.Rect(100, 200, 300, 50))
-        texto_resolucao = fonte_opcoes.render("Mudar Resolução", True, PRETO)
-        screen.blit(texto_resolucao, (150, 210))
-
-        pygame.draw.rect(screen, BRANCO, pygame.Rect(100, 300, 300, 50))
-        texto_volume = fonte_opcoes.render("Ajustar Volume", True, PRETO)
-        screen.blit(texto_volume, (180, 310))
-
-        pygame.draw.rect(screen, BRANCO, pygame.Rect(100, 400, 300, 50))
-        texto_voltar = fonte_opcoes.render("Menu Principal", True, PRETO)
-        screen.blit(texto_voltar, (200, 410))
-
-        pygame.display.flip()
-
-    return True
-
 def main():
     """Função principal que inicia a tela inicial e gerencia eventos do usuário."""
     plot_tela_inicial()
@@ -205,7 +156,7 @@ def main():
                         plot_tela_inicial()
                 elif button_login_rect.collidepoint(event.pos):
                     logado = telaLogin.login(tela, altura, largura)
-                    if(logado):
+                    if logado:
                         tocar(tela)
                     main()
                 elif button_registrar_rect.collidepoint(event.pos):
