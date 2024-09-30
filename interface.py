@@ -61,7 +61,7 @@ def loading_screen(loading_progress):
     pygame.draw.rect(tela, BRANCO, (100, altura - 50, loading_progress * (largura - 200), 20))
     pygame.display.flip()
 
-def tocar(screen):
+def tocar(screen, largura, altura):
     """Inicia a tela do jogo e exibe o vídeo com opções de menu."""
     pygame.mixer.music.stop()  # Parar a música antes de iniciar
     tempo_carregamento = 4
@@ -78,9 +78,14 @@ def tocar(screen):
 
     pygame.time.wait(2000)
 
-    # Iniciar a tela do pygame para o batuque
+    # Inicializar a câmera
+    camera = cv2.VideoCapture(0)
+    if not camera.isOpened():
+        print("Erro ao abrir a câmera")
+        return
+
     clock = pygame.time.Clock()
-    frames = cycle(run_batuque())
+    frames = cycle(run_batuque(screen))  # Aqui você passa a tela para run_batuque
     menu_aberto = False
     voltar_ao_menu_principal = False
 
@@ -103,29 +108,26 @@ def tocar(screen):
                     voltar_ao_menu_principal = True
 
         if not menu_aberto:
-            try:
-                frame = next(frames)
-            except StopIteration:
-                break
+            ret, frame = camera.read()
+            if not ret:
+                print("Erro ao capturar imagem da câmera")
+                continue
+
+            # Redimensionar para 1080x1920 (horizontal)
+            resized_frame = cv2.resize(frame, (1080, 1920))
 
             screen.fill(PRETO)
-            frame_rotacionado = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-            frame_corrigido = cv2.flip(frame_rotacionado, 0)
-            frame_surface = pygame.surfarray.make_surface(cv2.cvtColor(frame_corrigido, cv2.COLOR_BGR2RGB))
-
-            imagem_largura, imagem_altura = frame_surface.get_size()
-            pos_x = (largura - imagem_largura) // 2
-            pos_y = (altura - imagem_altura) // 2
-
-            screen.blit(frame_surface, (pos_x, pos_y))
+            frame_surface = pygame.surfarray.make_surface(cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB))
+            screen.blit(frame_surface, (0, 0))
             pygame.display.flip()
             clock.tick(30)
 
         if menu_aberto and pygame.key.get_pressed()[pygame.K_ESCAPE]:
             menu_aberto = False
 
-    cv2.VideoCapture(0).release()  # Liberar a câmera
+    camera.release()  # Liberar a câmera
     main()
+
 
 def sair():
     """Encerra o Pygame e sai do programa."""
@@ -150,14 +152,14 @@ def main():
                 button_registrar_rect = button_registrar_image.get_rect(topleft=(largura // 2 - button_registrar_image.get_width() // 2, altura - button_registrar_image.get_height() - 300))
 
                 if button_play_rect.collidepoint(event.pos):
-                    tocar(tela)
+                    tocar(tela, largura, altura)
                 elif button_settings_rect.collidepoint(event.pos):
                     if not configuracoes(tela):
                         plot_tela_inicial()
                 elif button_login_rect.collidepoint(event.pos):
                     logado = telaLogin.login(tela, altura, largura)
                     if logado:
-                        tocar(tela)
+                        tocar(tela, largura, altura)
                     main()
                 elif button_registrar_rect.collidepoint(event.pos):
                     telaRegistro.registrar(tela, altura, largura)
