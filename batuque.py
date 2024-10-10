@@ -108,7 +108,8 @@ def run_batuque(screen):
 
     start_time = time.time()
 
-    while True:
+    running = True
+    while running:
         ret, frame = camera.read()
         if not ret or frame is None or frame.size == 0:
             print("Erro ao capturar imagem da câmera")
@@ -164,7 +165,12 @@ def run_batuque(screen):
         screen.blit(frame_surface, (0, 0))
         pygame.display.flip()
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                running = False
 
     camera.release()
+    pygame.quit()
+    cv2.destroyAllWindows()
