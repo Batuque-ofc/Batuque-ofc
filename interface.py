@@ -9,6 +9,7 @@ import screens.telaLogin as telaLogin
 import screens.telaRegistro as telaRegistro
 import screens.menu_volume as menu_volume
 import screens.menu_resolucao as menu_resolucao
+from screens.configuracoes import configuracoes
 
 pygame.init()
 
@@ -20,6 +21,7 @@ def criar_tela():
     return tela, largura, altura
 
 tela, largura, altura = criar_tela()
+
 # Carregar imagens
 background_image = pygame.image.load("src/Images/tela inicial/imagem_de_fundo.png")
 logo_image = pygame.image.load("src/Images/tela inicial/logo.png")
@@ -59,7 +61,7 @@ def loading_screen(loading_progress):
     pygame.draw.rect(tela, BRANCO, (100, altura - 50, loading_progress * (largura - 200), 20))
     pygame.display.flip()
 
-def tocar(screen):
+def tocar(screen, largura, altura):
     """Inicia a tela do jogo e exibe o vídeo com opções de menu."""
     pygame.mixer.music.stop()  # Parar a música antes de iniciar
     tempo_carregamento = 4
@@ -76,9 +78,14 @@ def tocar(screen):
 
     pygame.time.wait(2000)
 
-    # Iniciar a tela do pygame para o batuque
+    # Inicializar a câmera
+    camera = cv2.VideoCapture(0)
+    if not camera.isOpened():
+        print("Erro ao abrir a câmera")
+        return
+
     clock = pygame.time.Clock()
-    frames = cycle(run_batuque())
+    frames = cycle(run_batuque(screen))  # Aqui você passa a tela para run_batuque
     menu_aberto = False
     voltar_ao_menu_principal = False
 
@@ -101,85 +108,31 @@ def tocar(screen):
                     voltar_ao_menu_principal = True
 
         if not menu_aberto:
-            try:
-                frame = next(frames)
-            except StopIteration:
-                break
+            ret, frame = camera.read()
+            if not ret:
+                print("Erro ao capturar imagem da câmera")
+                continue
+
+            # Redimensionar para 1080x1920 (horizontal)
+            resized_frame = cv2.resize(frame, (1080, 1920))
 
             screen.fill(PRETO)
-            frame_rotacionado = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-            frame_corrigido = cv2.flip(frame_rotacionado, 0)
-            frame_surface = pygame.surfarray.make_surface(cv2.cvtColor(frame_corrigido, cv2.COLOR_BGR2RGB))
-
-            imagem_largura, imagem_altura = frame_surface.get_size()
-            pos_x = (largura - imagem_largura) // 2
-            pos_y = (altura - imagem_altura) // 2
-
-            screen.blit(frame_surface, (pos_x, pos_y))
+            frame_surface = pygame.surfarray.make_surface(cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB))
+            screen.blit(frame_surface, (0, 0))
             pygame.display.flip()
             clock.tick(30)
 
         if menu_aberto and pygame.key.get_pressed()[pygame.K_ESCAPE]:
             menu_aberto = False
 
-    cv2.VideoCapture(0).release()  # Liberar a câmera
+    camera.release()  # Liberar a câmera
     main()
+
 
 def sair():
     """Encerra o Pygame e sai do programa."""
     pygame.quit()
     sys.exit()
-
-def configuracoes(screen):
-    """Abre o menu de configurações."""
-    fonte_titulo = pygame.font.Font(None, 48)
-    fonte_opcoes = pygame.font.Font(None, 36)
-    titulo = fonte_titulo.render("Configurações", True, BRANCO)
-
-    configurando = True
-    while configurando:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sair()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    configurando = False
-                    return False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
-                if 100 <= mouse_pos[0] <= 400 and 200 <= mouse_pos[1] <= 250:
-                    resolucao = menu_resolucao.config_resolucoes(screen)
-                    if not resolucao:
-                        plot_tela_inicial()
-                        return False
-                    pygame.display.set_mode(resolucao)
-                elif 100 <= mouse_pos[0] <= 400 and 300 <= mouse_pos[1] <= 350:
-                    volume = menu_volume.config_volume(screen)
-                    if not volume:
-                        plot_tela_inicial()
-                        return False
-                    pygame.mixer.music.set_volume(volume)
-                elif 100 <= mouse_pos[0] <= 400 and 400 <= mouse_pos[1] <= 450:
-                    return False
-
-        screen.fill(PRETO)
-        screen.blit(titulo, (100, 50))
-
-        pygame.draw.rect(screen, BRANCO, pygame.Rect(100, 200, 300, 50))
-        texto_resolucao = fonte_opcoes.render("Mudar Resolução", True, PRETO)
-        screen.blit(texto_resolucao, (150, 210))
-
-        pygame.draw.rect(screen, BRANCO, pygame.Rect(100, 300, 300, 50))
-        texto_volume = fonte_opcoes.render("Ajustar Volume", True, PRETO)
-        screen.blit(texto_volume, (180, 310))
-
-        pygame.draw.rect(screen, BRANCO, pygame.Rect(100, 400, 300, 50))
-        texto_voltar = fonte_opcoes.render("Menu Principal", True, PRETO)
-        screen.blit(texto_voltar, (200, 410))
-
-        pygame.display.flip()
-
-    return True
 
 def main():
     """Função principal que inicia a tela inicial e gerencia eventos do usuário."""
@@ -199,14 +152,14 @@ def main():
                 button_registrar_rect = button_registrar_image.get_rect(topleft=(largura // 2 - button_registrar_image.get_width() // 2, altura - button_registrar_image.get_height() - 300))
 
                 if button_play_rect.collidepoint(event.pos):
-                    tocar(tela)
+                    tocar(tela, largura, altura)
                 elif button_settings_rect.collidepoint(event.pos):
                     if not configuracoes(tela):
                         plot_tela_inicial()
                 elif button_login_rect.collidepoint(event.pos):
                     logado = telaLogin.login(tela, altura, largura)
-                    if(logado):
-                        tocar(tela)
+                    if logado:
+                        tocar(tela, largura, altura)
                     main()
                 elif button_registrar_rect.collidepoint(event.pos):
                     telaRegistro.registrar(tela, altura, largura)

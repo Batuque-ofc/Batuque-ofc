@@ -1,7 +1,13 @@
 import cv2
 import numpy as np
-from batuque import pinkLower as initial_pinkLower, pinkUpper as initial_pinkUpper
+#from batuque import pinkLower as initial_pinkLower, pinkUpper as initial_pinkUpper
 
+# Configurações de cor para detecção
+h_low, h_high = 146, 172
+s_low, s_high = 116, 255
+v_low, v_high = 123, 255
+initial_pinkLower = (h_low, s_low, v_low)
+initial_pinkUpper = (h_high, s_high, v_high)
 def nothing(x):
     pass
 
