@@ -93,10 +93,10 @@ def run_batuque(screen):
     H, W = 1080, 1920
     centers = [
         (int(H * 0.4), int(W * 0.1)),  # Chimbal
-        (int(H * 0.6), int(W * 0.2)),  # Caixa
+        (int(H * 0.6), int(W * 0.6)),  # Caixa
         (int(H * 0.7), int(W * 0.4)),  # Bumbo
         (int(H * 0.4), int(W * 0.7)),  # Crash
-        (int(H * 0.6), int(W * 0.6))   # Caixa espelhada
+        (int(H * 0.6), int(W * 0.2))   # Caixa espelhada
     ]
 
 
