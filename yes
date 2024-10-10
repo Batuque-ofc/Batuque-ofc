@@ -1,0 +1,82 @@
+[33mcommit 299bdf77258ff13e874ea0ea0a60abcb41ddc5e5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Merge: 0e47384 8e9fa20
+Author: Felipe Moreira <87377686+LipeLacross@users.noreply.github.com>
+Date:   Wed Oct 9 23:04:55 2024 -0300
+
+    Merge pull request #3 from LipeLacross/main
+    
+    fix: caixa
+
+[33mcommit 8e9fa20b74da78a351565944ca867fda5a7eff50[m
+Author: Felipe Moreira Rios <feliperioscross.br@gmail.com>
+Date:   Wed Oct 9 23:01:42 2024 -0300
+
+    fix: caixa
+
+[33mcommit 0e4738468f4cf5d78f89307e5c85b1bcdbf6db8b[m
+Merge: d4952f6 67d9371
+Author: Felipe Moreira <87377686+LipeLacross@users.noreply.github.com>
+Date:   Wed Oct 9 22:39:50 2024 -0300
+
+    feat: menu de config modularizado e opencv no pygame
+
+[33mcommit 67d9371f037b4419f85d16d0263b07c675881340[m
+Author: Felipe Moreira Rios <feliperioscross.br@gmail.com>
+Date:   Wed Oct 9 22:36:03 2024 -0300
+
+    feat: integração com pygame, tela de config modularizado
+
+[33mcommit 9653e87afaa04779f27556a20b546b580a997d94[m
+Author: Felipe Moreira Rios <feliperioscross.br@gmail.com>
+Date:   Mon Sep 30 01:07:36 2024 -0300
+
+    feat: opencv no pygame
+
+[33mcommit 7a4dd2adfd4ab63396575d48d3032d886ac13756[m
+Author: Felipe Moreira Rios <feliperioscross.br@gmail.com>
+Date:   Sun Sep 29 21:37:41 2024 -0300
+
+    feat: menu de config modularizado
+
+[33mcommit d4952f641843e0e42bc1659353446414aaf6f925[m
+Author: Felipe Moreira <87377686+LipeLacross@users.noreply.github.com>
+Date:   Sat Sep 21 21:33:04 2024 -0300
+
+    Delete .idea directory
+
+[33mcommit 44e0a21c95293575bec02e923a9a39351648dd8f[m
+Merge: a6a1148 978b028
+Author: Felipe Moreira <87377686+LipeLacross@users.noreply.github.com>
+Date:   Sat Sep 21 21:32:06 2024 -0300
+
+    add: requirements.txt
+
+[33mcommit 978b028b332195ee801bb15ba32eb5553b445c8b[m
+Author: Felipe Moreira Rios <feliperioscross.br@gmail.com>
+Date:   Sat Sep 21 21:31:30 2024 -0300
+
+    add: requirements.txt
+
+[33mcommit a6a1148cd8db3cedfbe7493acd45c5b574d15adb[m
+Author: Helson Gonçalves <helson.santos25@gmail.com>
+Date:   Fri Sep 20 09:34:17 2024 -0300
+
+    add: veradicionado função que verifica disponibilidade de nome de usuário
+
+[33mcommit 43bf2510c1648f4dc91921e268229ae361f05636[m
+Author: Helson Gonçalves <helson.santos25@gmail.com>
+Date:   Fri Sep 20 08:47:47 2024 -0300
+
+    add: queries do banco de dados para cadastro e consulta de usuários
+
+[33mcommit 9cf861ee9c535086f3088ae6a6079217a1fc39d7[m
+Author: Helson Gonçalves <helson.santos25@gmail.com>
+Date:   Thu Sep 19 23:38:22 2024 -0300
+
+    fix: colisão de botões da interface inicial
+
+[33mcommit 81470e08dcd499cf2ed0cbe8a9a14a04a38229cf[m
+Author: Felipe Moreira <87377686+LipeLacross@users.noreply.github.com>
+Date:   Tue Sep 17 10:17:19 2024 -0300
+
+    Commit Inicial
