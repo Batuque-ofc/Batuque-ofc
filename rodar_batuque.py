@@ -8,7 +8,7 @@ pygame.init()
 # Configurações da tela
 largura, altura = 1920, 1080
 screen = pygame.display.set_mode((largura, altura))
-
+    
 # Roda run_batuque
 if __name__ == "__main__":
     try:

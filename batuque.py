@@ -31,15 +31,18 @@ def run_batuque(screen):
     width = 1920
     height = 1080
 
-    last_played_time = [0, 0, 0]
+    last_played_time = [0, 0, 0, 0, 0]
     cooldown = 0.5  # Tempo em segundos entre toques
 
-    sound_played = [False, False, False]
+    # Estado para verificar se o som já foi tocado
+    sound_played = [False, False, False, False, False]
 
     drum_sounds = [
         mixer.Sound('src/sounds/Chimbal/Chimbal.mp3'),
         mixer.Sound('src/sounds/Caixa/Caixa.mp3'),
-        mixer.Sound('src/sounds/Bumbo/Bumbo.wav')
+        mixer.Sound('src/sounds/Bumbo/Bumbo.wav'),
+        mixer.Sound('src/sounds/Crash/Crash.mp3'),
+        mixer.Sound('src/sounds/Caixa2/Caixa2.mp3')
     ]
 
     def state_machine(sound_index):
@@ -73,7 +76,7 @@ def run_batuque(screen):
         print("Erro ao abrir a câmera")
         sys.exit()
 
-    instruments = ['Chimbal.png', 'Caixa.png', 'Bumbo.png']
+    instruments = ['Chimbal.png', 'Caixa.png', 'Bumbo.png', 'Crash.png', 'Caixa2.png']
     instrument_images = []
 
     for img in instruments:
@@ -85,14 +88,19 @@ def run_batuque(screen):
             image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
             instrument_images.append(cv2.resize(image, (200, 150), interpolation=cv2.INTER_CUBIC))
 
-    # Posições dos instrumentos
-    H, W = 720, 1280
+    # Posições dos instrumentos ajustadas
+    # Posições dos instrumentos ajustadas
+    H, W = 1080, 1920
     centers = [
-        (H * 4 // 8, W * 1 // 8),  # Chimbal
-        (H * 6 // 8, W * 6 // 8),  # Caixa
-        (H * 7 // 8, W * 4 // 8),  # Bumbo
+        (int(H * 0.4), int(W * 0.1)),  # Chimbal
+        (int(H * 0.6), int(W * 0.2)),  # Caixa
+        (int(H * 0.7), int(W * 0.4)),  # Bumbo
+        (int(H * 0.4), int(W * 0.7)),  # Crash
+        (int(H * 0.6), int(W * 0.6))   # Caixa espelhada
     ]
-    sizes = [(150, 200), (150, 200), (200, 200)]  # Ajustar o tamanho para corresponder à nova orientação
+
+
+    sizes = [(150, 200), (150, 200), (200, 200), (150, 200), (150, 200)]  # Ajustar o tamanho para corresponder à nova orientação
 
     ROIs = [(center[0] - size[0] // 2, center[1] - size[1] // 2, center[0] + size[0] // 2, center[1] + size[1] // 2) for center, size in zip(centers, sizes)]
 
