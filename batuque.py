@@ -4,6 +4,7 @@ import cv2
 import time
 from pygame import mixer
 import pygame
+import subprocess
 
 def run_batuque(screen):
     # Configurações de cor para detecção
@@ -118,7 +119,6 @@ def run_batuque(screen):
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)  # Rotacionar a imagem da câmera
         frame = cv2.resize(frame, (height, width))
 
-        cv2.putText(frame, 'Projeto: Batuque', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (20, 20, 20), 2)
         current_time = time.time() - start_time
 
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
@@ -169,7 +169,9 @@ def run_batuque(screen):
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_q:
-                running = False
+                # Chamar o arquivo interface.py
+                subprocess.Popen([sys.executable, 'interface.py'])  # Execute o script
+                running = False 
 
     camera.release()
     pygame.quit()
