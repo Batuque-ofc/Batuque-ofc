@@ -174,3 +174,4 @@ def run_batuque(screen):
     camera.release()
     pygame.quit()
     cv2.destroyAllWindows()
+    

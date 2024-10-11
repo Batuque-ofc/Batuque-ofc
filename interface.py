@@ -83,9 +83,10 @@ def tocar(screen, largura, altura):
     if not camera.isOpened():
         print("Erro ao abrir a câmera")
         return
-
+    
     clock = pygame.time.Clock()
     frames = cycle(run_batuque(screen))  # Aqui você passa a tela para run_batuque
+
     menu_aberto = False
     voltar_ao_menu_principal = False
 
