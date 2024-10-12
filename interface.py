@@ -8,6 +8,8 @@ from batuque import run_batuque
 import screens.telaLogin as telaLogin
 import screens.telaRegistro as telaRegistro
 from screens.configuracoes import configuracoes
+from screens.modulos_aprendizado import modulos_tutoriais
+
 
 pygame.init()
 
@@ -28,6 +30,7 @@ button_settings_image = pygame.image.load("src/Images/tela inicial/configuracoes
 button_exit_image = pygame.image.load("src/Images/tela inicial/sair_button.svg")
 button_login_image = pygame.image.load("src/Images/tela inicial/login_button.svg")
 button_registrar_image = pygame.image.load("src/Images/tela inicial/register_button.svg")
+button_tutorial_image = pygame.image.load("src/Images/tela inicial/tutorial_button.png")
 
 # Carregar música
 pygame.mixer.music.load("src/Images/tela inicial/drum_no_copyright.mp3")
@@ -48,8 +51,9 @@ def plot_tela_inicial():
     tela.blit(button_settings_image, (largura // 2 - button_settings_image.get_width() // 2, altura - button_settings_image.get_height() - 150))
     tela.blit(button_exit_image, (largura // 2 - button_exit_image.get_width() // 2, altura - button_exit_image.get_height() - 75))
     tela.blit(mensagem_boas_vindas, (largura // 2 - mensagem_boas_vindas.get_width() // 2, altura // 8))
-    tela.blit(button_login_image, (largura // 2 - button_login_image.get_width() // 2, altura - button_login_image.get_height() - 375))
-    tela.blit(button_registrar_image, (largura // 2 - button_registrar_image.get_width() // 2, altura - button_registrar_image.get_height() - 300))
+    tela.blit(button_login_image, (largura // 2 - button_login_image.get_width() // 2, altura - button_login_image.get_height() - 450))
+    tela.blit(button_registrar_image, (largura // 2 - button_registrar_image.get_width() // 2, altura - button_registrar_image.get_height() - 375))
+    tela.blit(button_tutorial_image, (largura // 2 - button_tutorial_image.get_width() // 2, altura - button_tutorial_image.get_height() - 300))
     pygame.display.flip()
 
 def loading_screen(loading_progress):
@@ -61,7 +65,7 @@ def loading_screen(loading_progress):
 
 def tocar(screen, largura, altura):
     """Inicia a tela do jogo e exibe o vídeo com opções de menu."""
-    pygame.mixer.music.stop()  # Parar a música antes de iniciar
+  # Parar a música antes de iniciar
     tempo_carregamento = 4
     tempo_inicial = time.time()
 
@@ -74,7 +78,7 @@ def tocar(screen, largura, altura):
         if tempo_decorrido >= tempo_carregamento:
             break
 
-    pygame.time.wait(2000)
+
 
     # Inicializar a câmera
     camera = cv2.VideoCapture(0)
@@ -83,7 +87,7 @@ def tocar(screen, largura, altura):
         return
     
     clock = pygame.time.Clock()
-    frames = cycle(run_batuque(screen))  # Aqui você passa a tela para run_batuque
+    frame = cycle(run_batuque(screen))  # Aqui você passa a tela para run_batuque
     menu_aberto = False
     voltar_ao_menu_principal = False
 
@@ -126,9 +130,8 @@ def tocar(screen, largura, altura):
     camera.release()  # Liberar a câmera
     main()
 
-
 def sair():
-    """Encerra o Pygame e sai do programa."""
+    """Encerra o Pygame e sai do programa.""" 
     pygame.quit()
     sys.exit()
 
@@ -146,9 +149,10 @@ def main():
                 button_play_rect = button_play_image.get_rect(topleft=(largura // 2 - button_play_image.get_width() // 2, altura - button_play_image.get_height() - 225))
                 button_settings_rect = button_settings_image.get_rect(topleft=(largura // 2 - button_settings_image.get_width() // 2, altura - button_settings_image.get_height() - 150))
                 button_exit_rect = button_exit_image.get_rect(topleft=(largura // 2 - button_exit_image.get_width() // 2, altura - button_exit_image.get_height() - 75))
-                button_login_rect = button_login_image.get_rect(topleft=(largura // 2 - button_login_image.get_width() // 2, altura - button_login_image.get_height() - 375))
-                button_registrar_rect = button_registrar_image.get_rect(topleft=(largura // 2 - button_registrar_image.get_width() // 2, altura - button_registrar_image.get_height() - 300))
-
+                button_login_rect = button_login_image.get_rect(topleft=(largura // 2 - button_login_image.get_width() // 2, altura - button_login_image.get_height() - 450))
+                button_registrar_rect = button_registrar_image.get_rect(topleft=(largura // 2 - button_registrar_image.get_width() // 2, altura - button_registrar_image.get_height() - 375))
+                button_tutorial_rect = button_tutorial_image.get_rect(topleft=(largura // 2 - button_registrar_image.get_width() // 2, altura - button_registrar_image.get_height() - 300))
+                
                 if button_play_rect.collidepoint(event.pos):
                     tocar(tela, largura, altura)
                 elif button_settings_rect.collidepoint(event.pos):
@@ -164,6 +168,10 @@ def main():
                     main()
                 elif button_exit_rect.collidepoint(event.pos):
                     sair()
+                elif button_tutorial_rect.collidepoint(event.pos):
+                    modulos_tutoriais(tela, altura, largura)
+                    main()
+                
 
         pygame.display.flip()
 
@@ -173,4 +181,3 @@ if __name__ == "__main__":
 
 # Encerrar o Pygame
 pygame.quit()
-
