@@ -7,8 +7,6 @@ import cv2
 from batuque import run_batuque
 import screens.telaLogin as telaLogin
 import screens.telaRegistro as telaRegistro
-import screens.menu_volume as menu_volume
-import screens.menu_resolucao as menu_resolucao
 from screens.configuracoes import configuracoes
 
 pygame.init()
@@ -86,7 +84,6 @@ def tocar(screen, largura, altura):
     
     clock = pygame.time.Clock()
     frames = cycle(run_batuque(screen))  # Aqui você passa a tela para run_batuque
-
     menu_aberto = False
     voltar_ao_menu_principal = False
 

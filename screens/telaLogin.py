@@ -1,18 +1,27 @@
+import sys
 import pygame
-from models.database import consultar_usuario, conectar_banco_de_dados
+from models.database import conectar_banco_de_dados, consultar_usuario
 
 bg_color = (240, 248, 255)
-txt_color = (0, 0, 0)
+txt_color = (0, 0, 0)  # Preto para o texto
 
-return_image = pygame.image.load("./src/Images/tela inicial/return_button.png")
+return_image = pygame.image.load("src/Images/tela inicial/return_button.png")
+
+def draw_rounded_rect(screen, color, rect, radius, width=0):
+    """Desenha um retângulo com bordas arredondadas e uma espessura de borda opcional."""
+    pygame.draw.rect(screen, color, rect, border_radius=radius, width=width)
 
 def login(tela, altura, largura):
-    fonte = pygame.font.Font(None, 48)
+    # Redimensionar a fonte com base na largura da tela
+    fonte_titulo = pygame.font.Font(None, int(largura * 0.08))  # 8% da largura da tela
+    fonte_opcoes = pygame.font.Font(None, int(largura * 0.03))  # 3% da largura da tela
 
     input_box1 = pygame.Rect(largura // 2 - 200, altura // 1.5 - 225, 400, 50)
     input_box2 = pygame.Rect(largura // 2 - 200, altura // 1.5 - 125, 400, 50)
     button_rect = pygame.Rect(largura // 2 - 200, altura // 1.5 - 25, 400, 50)
-    button_return_rect = return_image.get_rect(topleft=(50, altura - return_image.get_height() - 750))
+
+    # Botão de voltar representado pela imagem
+    button_back_rect = return_image.get_rect(topleft=(50, altura - return_image.get_height() - 750))
 
     color_inactive = pygame.Color('lightskyblue3')
     color_active = pygame.Color('dodgerblue2')
@@ -26,7 +35,7 @@ def login(tela, altura, largura):
     text1 = ''
     text2 = ''
 
-    fonte_input = pygame.font.Font(None, 36)
+    fonte_input = pygame.font.Font(None, int(largura * 0.027))  # 4% da largura da tela
     login = True
 
     error_message = ''  # Armazenará a mensagem de erro caso o login falhe
@@ -45,9 +54,6 @@ def login(tela, altura, largura):
                     active2 = not active2
                 else:
                     active2 = False
-                if button_return_rect.collidepoint(event.pos):
-                    return False
-                # Verifica se o botão de "Entrar" foi clicado
                 if button_rect.collidepoint(event.pos):
                     if text1 and text2:
                         cnx = conectar_banco_de_dados()
@@ -58,10 +64,16 @@ def login(tela, altura, largura):
                         else:
                             error_message = "Usuário ou senha incorretos"
                     else:
-                        error_message = "Por favor, preencha todos os campos"
+                        error_message = "Por favor, preencha todos os campos!"
+                
+                # Verificar se o botão de voltar foi clicado
+                if button_back_rect.collidepoint(event.pos):
+                    login = False  # Ou chamar uma função que volte para a tela anterior
 
+                # Atualização da cor
                 color1 = color_active if active1 else color_inactive
                 color2 = color_active if active2 else color_inactive
+
             elif event.type == pygame.KEYDOWN:
                 if active1:
                     if event.key == pygame.K_RETURN:
@@ -79,35 +91,41 @@ def login(tela, altura, largura):
                         text2 += event.unicode
 
         tela.fill(bg_color)
-        txt_surface1 = fonte_input.render(text1, True, color1)
-        txt_surface2 = fonte_input.render('*' * len(text2), True, color2)  # Exibe asteriscos
+        
+        # Usando txt_color (preto) para o texto digitado
+        txt_surface1 = fonte_input.render(text1, True, txt_color)
+        txt_surface2 = fonte_input.render('*' * len(text2), True, txt_color)  # Exibe asteriscos para senha
 
         width1 = max(400, txt_surface1.get_width() + 10)
         input_box1.w = width1
         width2 = max(400, txt_surface2.get_width() + 10)
         input_box2.w = width2
 
-        tela.blit(txt_surface1, (input_box1.x + 5, input_box1.y + 5))
-        tela.blit(txt_surface2, (input_box2.x + 5, input_box2.y + 5))
+        tela.blit(txt_surface1, (input_box1.x + 5, input_box1.y + 10))
+        tela.blit(txt_surface2, (input_box2.x + 5, input_box2.y + 15))
 
-        pygame.draw.rect(tela, color1, input_box1, 2)
-        pygame.draw.rect(tela, color2, input_box2, 2)
-        pygame.draw.rect(tela, color_inactive, button_rect)
+        # Desenhar caixas de entrada com bordas arredondadas finas
+        draw_rounded_rect(tela, color1, input_box1, 10, 5)
+        draw_rounded_rect(tela, color2, input_box2, 10, 5)
 
-        fonte_h1_login = pygame.font.Font(None, 145)
-        mensagem_boas_vindas = fonte_h1_login.render("Login", True, txt_color)
+        # Desenhar o botão de login com bordas arredondadas finas
+        draw_rounded_rect(tela, color_inactive, button_rect, 10, 5)
 
-        tela.blit(return_image, (50, altura - return_image.get_height() - 750))
-        tela.blit(mensagem_boas_vindas, (largura // 2 - mensagem_boas_vindas.get_width() // 2, altura // 8))
-        texto_usuario = fonte.render("Usuário:", True, txt_color)
+        # Desenhar o botão de voltar com a imagem
+        tela.blit(return_image, button_back_rect)
+        
+        titulo = fonte_titulo.render("Login", True, txt_color)
+        tela.blit(titulo, (largura // 2 - titulo.get_width() // 2, altura // 8))
+
+        texto_usuario = fonte_opcoes.render("Usuário:", True, txt_color)
         tela.blit(texto_usuario, (input_box1.x, input_box1.y - 40))
-        texto_senha = fonte.render("Senha:", True, txt_color)
+        texto_senha = fonte_opcoes.render("Senha:", True, txt_color)
         tela.blit(texto_senha, (input_box2.x, input_box2.y - 40))
-        tela.blit(fonte.render("Entrar", True, txt_color), (button_rect.x + 150, button_rect.y + 10))
+        tela.blit(fonte_opcoes.render("Entrar", True, txt_color), (button_rect.x + 150, button_rect.y + 10))
 
         # Exibe a mensagem de erro, se houver
         if error_message:
-            erro_surface = fonte.render(error_message, True, (255, 0, 0))  # Exibe em vermelho
+            erro_surface = fonte_opcoes.render(error_message, True, (255, 0, 0))  # Exibe em vermelho
             tela.blit(erro_surface, (largura // 2 - erro_surface.get_width() // 2, altura // 1.5 + 50))
 
         pygame.display.flip()
