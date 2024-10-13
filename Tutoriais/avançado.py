@@ -12,8 +12,7 @@ PRETO = (0, 0, 0)
 BRANCO = (255, 255, 255)
 largura, altura = 1920, 1080  # Definindo a largura e altura da tela
 logo_image = pygame.image.load("src/Images/tela inicial/logo.png")
-width = 1920
-height = 1080
+
 
 def loading_screen(tela, loading_progress):
     
@@ -81,8 +80,8 @@ def run_batuque(screen):
         return mask
 
     camera = cv2.VideoCapture(0)
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, largura)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, altura)
 
     if not camera.isOpened():
         print("Erro ao abrir a câmera")
@@ -129,7 +128,7 @@ def run_batuque(screen):
             break
 
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)  # Rotacionar a imagem da câmera
-        frame = cv2.resize(frame, (height, width))
+        frame = cv2.resize(frame, (altura, largura))
 
         current_time = time.time() - start_time
 

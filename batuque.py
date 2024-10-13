@@ -6,23 +6,41 @@ from pygame import mixer
 import pygame
 import subprocess
 
+pygame.init()
+# Definir as dimensões da tela
+def criar_tela():
+    largura = pygame.display.Info().current_w
+    altura = pygame.display.Info().current_h
+    tela = pygame.display.set_mode((largura, altura), pygame.SCALED)
+    return tela, largura, altura
 
+tela, largura, altura = criar_tela()
 
+# Carregar imagens
+logo_image = pygame.image.load("src/Images/tela inicial/logo.png")
+
+# Carregar sons
+drum_sounds = [
+    mixer.Sound('src/sounds/Chimbal/Chimbal.mp3'),
+    mixer.Sound('src/sounds/Caixa/Caixa.mp3'),
+    mixer.Sound('src/sounds/Bumbo/Bumbo.wav'),
+    mixer.Sound('src/sounds/Crash/Crash.mp3'),
+    mixer.Sound('src/sounds/Caixa2/Caixa2.mp3')
+]
+
+# Definir cores
 PRETO = (0, 0, 0)
 BRANCO = (255, 255, 255)
-largura, altura = 1920, 1080  # Definindo a largura e altura da tela
-logo_image = pygame.image.load("src/Images/tela inicial/logo.png")
-width = 1920
-height = 1080
 
-
-def loading_screen(tela):
-    
+def loading_screen(loading_progress):
+    """Desenha a tela de carregamento com a barra de progresso."""
     tela.fill(PRETO)
-    tela.blit(logo_image, (largura // 3 - logo_image.get_width() // 3.5, altura // 3 - logo_image.get_height() // 3))
+    tela.blit(logo_image, (largura // 2 - logo_image.get_width() // 2, altura // 2 - logo_image.get_height() // 2))
+    pygame.draw.rect(tela, BRANCO, (100, altura - 50, loading_progress * (largura - 200), 20))
     pygame.display.flip()
 
 def run_batuque(screen):
+    
     # Configurações de cor para detecção
     h_low, h_high = 146, 172
     s_low, s_high = 116, 255
@@ -33,16 +51,7 @@ def run_batuque(screen):
     last_played_time = [0, 0, 0, 0, 0]
     cooldown = 0.5  # Tempo em segundos entre toques
 
-    # Estado para verificar se o som já foi tocado
     sound_played = [False, False, False, False, False]
-
-    drum_sounds = [
-        mixer.Sound('src/sounds/Chimbal/Chimbal.mp3'),
-        mixer.Sound('src/sounds/Caixa/Caixa.mp3'),
-        mixer.Sound('src/sounds/Bumbo/Bumbo.wav'),
-        mixer.Sound('src/sounds/Crash/Crash.mp3'),
-        mixer.Sound('src/sounds/Caixa2/Caixa2.mp3')
-    ]
 
     def state_machine(sound_index):
         current_time = time.time()
@@ -68,8 +77,8 @@ def run_batuque(screen):
         return mask
 
     camera = cv2.VideoCapture(0)
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, largura)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, altura)
 
     if not camera.isOpened():
         print("Erro ao abrir a câmera")
@@ -87,8 +96,6 @@ def run_batuque(screen):
             image = cv2.flip(image, 1) 
             instrument_images.append(cv2.resize(image, (200, 150), interpolation=cv2.INTER_CUBIC))
 
-    # Posições dos instrumentos ajustadas
-    # Posições dos instrumentos ajustadas
     H, W = 1080, 1920
     centers = [
         (int(H * 0.4), int(W * 0.1)),  # Chimbal
@@ -98,29 +105,23 @@ def run_batuque(screen):
         (int(H * 0.6), int(W * 0.2))   # Caixa espelhada
     ]
 
-
-    sizes = [(150, 200), (150, 200), (200, 200), (150, 200), (150, 200)]  # Ajustar o tamanho para corresponder à nova orientação
-
+    sizes = [(150, 200), (150, 200), (200, 200), (150, 200), (150, 200)]
     ROIs = [(center[0] - size[0] // 2, center[1] - size[1] // 2, center[0] + size[0] // 2, center[1] + size[1] // 2) for center, size in zip(centers, sizes)]
 
     start_time = time.time()
-
+    
     running = True
     while running:
         ret, frame = camera.read()
-        while not ret or frame is None or frame.size == 0:
-            ret, frame = camera.read()
-            print("Erro ao capturar imagem da câmera")
+        if not ret:
             break
 
-        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)  # Rotacionar a imagem da câmera
-        frame = cv2.resize(frame, (height, width))
-
+        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)  
+        frame = cv2.resize(frame, (altura, largura))
 
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
             roi = frame[top_y:bottom_y, top_x:bottom_x]
             mask = ROI_analysis(roi, i, pinkLower, pinkUpper)
-
 
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
             roi = frame[top_y:bottom_y, top_x:bottom_x]
@@ -143,20 +144,22 @@ def run_batuque(screen):
         frame_surface = pygame.surfarray.make_surface(frame)
         screen.blit(frame_surface, (0, 0))
         pygame.display.flip()
+        
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                # Exibir a tela de carregamento antes de iniciar o subprocesso
-                for i in range(101):  # Aumenta o progresso de 0 a 100
-                    loading_screen(screen, i / 100)
-                    pygame.time.delay(10)  # Delay para dar tempo de exibir a tela de carregamento
-                # Chamar o arquivo interface.py de forma assíncrona e esperar seu término
-                process = subprocess.Popen([sys.executable, 'interface.py'])  # Execute o script
-                process.wait()  # Espera o subprocesso terminar antes de continuar
-                running = False  # Encerra o loop principal após iniciar o subprocess
+                # Exibir tela de loading ao sair
+                for i in range(101):
+                    loading_screen(i / 100)
+                    pygame.time.delay(10)
+                
+                # Iniciar a interface.py como subprocesso
+                subprocess.Popen([sys.executable, 'interface.py'])
+
+                # Encerrar o loop e liberar a câmera sem esperar o subprocesso
+                running = False
 
     camera.release()
     pygame.quit()
-    cv2.destroyAllWindows()

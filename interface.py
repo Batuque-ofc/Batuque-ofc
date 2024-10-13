@@ -1,19 +1,21 @@
+import os
+import sys
 import time
 import pygame
-import sys
+import cv2
 from itertools import cycle
 from pygame.locals import *
-import cv2
 from batuque import run_batuque
 import screens.telaLogin as telaLogin
 import screens.telaRegistro as telaRegistro
 from screens.configuracoes import configuracoes
 from screens.modulos_aprendizado import modulos_tutoriais
 
+sys.stderr = open(os.devnull, 'w')
 
 pygame.init()
 
-# Definir as dimensões da janela
+
 def criar_tela():
     largura = pygame.display.Info().current_w
     altura = pygame.display.Info().current_h
@@ -22,7 +24,7 @@ def criar_tela():
 
 tela, largura, altura = criar_tela()
 
-# Carregar imagens
+
 background_image = pygame.image.load("src/Images/tela inicial/imagem_de_fundo.png")
 logo_image = pygame.image.load("src/Images/tela inicial/logo.png")
 button_play_image = pygame.image.load("src/Images/tela inicial/tocar_button.svg")
@@ -32,15 +34,15 @@ button_login_image = pygame.image.load("src/Images/tela inicial/login_button.svg
 button_registrar_image = pygame.image.load("src/Images/tela inicial/register_button.svg")
 button_tutorial_image = pygame.image.load("src/Images/tela inicial/tutorial_button.png")
 
-# Carregar música
+
 pygame.mixer.music.load("src/Images/tela inicial/drum_no_copyright.mp3")
 pygame.mixer.music.set_volume(0.2)
 
-# Definir cores
+
 PRETO = (0, 0, 0)
 BRANCO = (255, 255, 255)
 
-# Definir fonte para a mensagem de boas-vindas
+
 fonte = pygame.font.Font(None, 145)
 mensagem_boas_vindas = fonte.render("Sinta o som do batuque!", True, BRANCO)
 
@@ -64,12 +66,10 @@ def loading_screen(loading_progress):
     pygame.display.flip()
 
 def tocar(screen, largura, altura):
-    """Inicia a tela do jogo e exibe o vídeo com opções de menu."""
-  # Parar a música antes de iniciar
     tempo_carregamento = 4
     tempo_inicial = time.time()
+    
 
-    # Tela de carregamento
     while True:
         tempo_atual = time.time()
         tempo_decorrido = tempo_atual - tempo_inicial
@@ -79,15 +79,10 @@ def tocar(screen, largura, altura):
             break
 
 
-
-    # Inicializar a câmera
     camera = cv2.VideoCapture(0)
-    if not camera.isOpened():
-        print("Erro ao abrir a câmera")
-        return
     
     clock = pygame.time.Clock()
-    frame = cycle(run_batuque(screen))  # Aqui você passa a tela para run_batuque
+    frame = cycle(run_batuque(screen))
     menu_aberto = False
     voltar_ao_menu_principal = False
 
@@ -112,10 +107,9 @@ def tocar(screen, largura, altura):
         if not menu_aberto:
             ret, frame = camera.read()
             if not ret:
-                print("Erro ao capturar imagem da câmera")
-                continue
+                break
 
-            # Redimensionar para 1080x1920 (horizontal)
+
             resized_frame = cv2.resize(frame, (1080, 1920))
 
             screen.fill(PRETO)
@@ -127,18 +121,17 @@ def tocar(screen, largura, altura):
         if menu_aberto and pygame.key.get_pressed()[pygame.K_ESCAPE]:
             menu_aberto = False
 
-    camera.release()  # Liberar a câmera
+    camera.release()
     main()
 
 def sair():
-    """Encerra o Pygame e sai do programa.""" 
     pygame.quit()
     sys.exit()
 
 def main():
-    """Função principal que inicia a tela inicial e gerencia eventos do usuário."""
+
     plot_tela_inicial()
-    pygame.mixer.music.play(-1)  # Loop infinito
+    pygame.mixer.music.play(-1)
 
     running = True
     while running:
@@ -175,9 +168,8 @@ def main():
 
         pygame.display.flip()
 
-# Executar o programa
+
 if __name__ == "__main__":
     main()
 
-# Encerrar o Pygame
 pygame.quit()
