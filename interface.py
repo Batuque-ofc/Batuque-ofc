@@ -34,7 +34,7 @@ button_register_image = pygame.image.load("src/Images/tela inicial/register_butt
 button_tutorial_image = pygame.image.load("src/Images/tela inicial/tutorial_button.png")
 
 pygame.mixer.music.load("src/Images/tela inicial/drum_no_copyright.mp3")
-pygame.mixer.music.set_volume(0.2)
+pygame.mixer.music.set_volume(0.5)
 
 # Definir cores
 PRETO = (0, 0, 0)
@@ -42,7 +42,7 @@ BRANCO = (255, 255, 255)
 button_text_color = (255, 255, 255)
 button_hover_color = (255, 255, 255)
 
-fonte_titulo = pygame.font.Font(None, 100)
+fonte_titulo = pygame.font.Font(None, 120)
 mensagem_boas_vindas = fonte_titulo.render("Sinta o som do batuque!", True, (255, 255, 255))
 
 def draw_button(screen, image, position, hover_color, mouse_pos):
@@ -122,7 +122,8 @@ def sair():
 
 def main():
     plot_tela_inicial()
-    pygame.mixer.music.play(-1)
+    if not pygame.mixer.music.get_busy():
+        pygame.mixer.music.play(-1)
     running = True
     while running:
         mouse_pos = pygame.mouse.get_pos()
@@ -139,15 +140,15 @@ def main():
                     logado = telaLogin.login(tela, altura, largura)
                     if logado:
                         tocar(tela, largura, altura)
-                    main()
+                    plot_tela_inicial()
                 elif button_register_rect.collidepoint(event.pos):
                     telaRegistro.registrar(tela, altura, largura)
-                    main()
+                    plot_tela_inicial()
                 elif button_exit_rect.collidepoint(event.pos):
                     sair()
                 elif button_tutorial_rect.collidepoint(event.pos):
                     modulos_tutoriais(tela, altura, largura)
-                    main()
+                    plot_tela_inicial()
         plot_tela_inicial()
 
 if __name__ == "__main__":
