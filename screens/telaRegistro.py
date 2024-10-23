@@ -15,6 +15,8 @@ text_color = (0, 0, 0)
 button_text_color = (255, 255, 255)
 
 return_image = pygame.image.load("src/Images/tela inicial/return_button.png")
+show_password_image = pygame.image.load("src/Images/tela login/eye-password-show.svg")
+hide_password_image = pygame.image.load("src/Images/tela login/eye-password-not-show.svg")
 
 def draw_rounded_rect(screen, color, rect, radius, width=0):
     pygame.draw.rect(screen, color, rect, border_radius=radius, width=width)
@@ -51,6 +53,7 @@ def registrar(tela, altura, largura):
     active1 = False
     active2 = False
     active3 = False
+    show_password = False
 
     text1 = ''
     text2 = ''
@@ -93,6 +96,8 @@ def registrar(tela, altura, largura):
                         error_message = "Preencha todos os campos!"
                 if button_back_rect.collidepoint(event.pos):
                     registrar_running = False
+                if show_password_rect.collidepoint(event.pos):
+                    show_password = not show_password
 
                 color1 = input_active_color if active1 else input_inactive_color
                 color2 = input_active_color if active2 else input_inactive_color
@@ -121,10 +126,12 @@ def registrar(tela, altura, largura):
         tela.blit(titulo, (largura // 2 - titulo.get_width() // 2, altura // 8))
 
         txt_surface1 = fonte_input.render(text1, True, text_color)
-        txt_surface2 = fonte_input.render('*' * len(text2), True, text_color)
+        txt_surface2 = fonte_input.render(text2 if show_password else '*' * len(text2), True, text_color)
         txt_surface3 = fonte_input.render('*' * len(text3), True, text_color)
         tela.blit(txt_surface1, (input_box1.x + 5, input_box1.y + 10))
         tela.blit(txt_surface2, (input_box2.x + 5, input_box2.y + 10))
+        show_password_rect = show_password_image.get_rect(topleft=(input_box2.right + 10, input_box2.y + 10))
+        tela.blit(show_password_image if not show_password else hide_password_image, show_password_rect)
         tela.blit(txt_surface3, (input_box3.x + 5, input_box3.y + 10))
         draw_rounded_rect(tela, color1, input_box1, 10, 5)
         draw_rounded_rect(tela, color2, input_box2, 10, 5)
