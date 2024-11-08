@@ -5,8 +5,10 @@ import time
 from pygame import mixer
 import pygame
 import subprocess
+from screens import configuracoes  # Importa o módulo de configurações
 
 pygame.init()
+
 # Definir as dimensões da tela
 def criar_tela():
     largura = pygame.display.Info().current_w
@@ -40,7 +42,6 @@ def loading_screen(loading_progress):
     pygame.display.flip()
 
 def run_batuque(screen):
-    
     # Configurações de cor para detecção
     h_low, h_high = 146, 172
     s_low, s_high = 116, 255
@@ -50,7 +51,6 @@ def run_batuque(screen):
 
     last_played_time = [0, 0, 0, 0, 0]
     cooldown = 0.5  # Tempo em segundos entre toques
-
     sound_played = [False, False, False, False, False]
 
     def state_machine(sound_index):
@@ -93,7 +93,7 @@ def run_batuque(screen):
             print(f"Erro ao carregar imagem: {img}")
         else:
             image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
-            image = cv2.flip(image, 1) 
+            image = cv2.flip(image, 1)
             instrument_images.append(cv2.resize(image, (200, 150), interpolation=cv2.INTER_CUBIC))
 
     H, W = 1080, 1920
@@ -108,58 +108,51 @@ def run_batuque(screen):
     sizes = [(150, 200), (150, 200), (200, 200), (150, 200), (150, 200)]
     ROIs = [(center[0] - size[0] // 2, center[1] - size[1] // 2, center[0] + size[0] // 2, center[1] + size[1] // 2) for center, size in zip(centers, sizes)]
 
-    start_time = time.time()
-    
     running = True
+    in_settings = False  # Variável para controlar se o menu de configurações está ativo
     while running:
-        ret, frame = camera.read()
-        if not ret:
-            break
+        if not in_settings:
+            ret, frame = camera.read()
+            if not ret:
+                break
 
-        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)  
-        frame = cv2.resize(frame, (altura, largura))
+            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            frame = cv2.resize(frame, (altura, largura))
 
-        for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
-            roi = frame[top_y:bottom_y, top_x:bottom_x]
-            mask = ROI_analysis(roi, i, pinkLower, pinkUpper)
+            for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
+                roi = frame[top_y:bottom_y, top_x:bottom_x]
+                mask = ROI_analysis(roi, i, pinkLower, pinkUpper)
 
-        for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
-            roi = frame[top_y:bottom_y, top_x:bottom_x]
-            overlay = instrument_images[i]
-            overlay_resized = cv2.resize(overlay, (roi.shape[1], roi.shape[0]))
+            for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
+                roi = frame[top_y:bottom_y, top_x:bottom_x]
+                overlay = instrument_images[i]
+                overlay_resized = cv2.resize(overlay, (roi.shape[1], roi.shape[0]))
 
-            if overlay_resized.shape[2] == 4:
-                b, g, r, a = cv2.split(overlay_resized)
-                overlay_rgb = cv2.merge((b, g, r))
-                alpha_mask = a / 255.0 * 0.5
-                alpha_inv = 1.0 - alpha_mask
+                if overlay_resized.shape[2] == 4:
+                    b, g, r, a = cv2.split(overlay_resized)
+                    overlay_rgb = cv2.merge((b, g, r))
+                    alpha_mask = a / 255.0 * 0.5
+                    alpha_inv = 1.0 - alpha_mask
 
-                for c in range(0, 3):
-                    frame[top_y:bottom_y, top_x:bottom_x, c] = (alpha_mask * overlay_rgb[:, :, c] +
-                                                                alpha_inv * frame[top_y:bottom_y, top_x:bottom_x, c])
-            else:
-                frame[top_y:bottom_y, top_x:bottom_x] = cv2.addWeighted(overlay_resized, 0.5, roi, 0.5, 0)
+                    for c in range(0, 3):
+                        frame[top_y:bottom_y, top_x:bottom_x, c] = (alpha_mask * overlay_rgb[:, :, c] +
+                                                                    alpha_inv * frame[top_y:bottom_y, top_x:bottom_x, c])
+                else:
+                    frame[top_y:bottom_y, top_x:bottom_x] = cv2.addWeighted(overlay_resized, 0.5, roi, 0.5, 0)
 
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_surface = pygame.surfarray.make_surface(frame)
-        screen.blit(frame_surface, (0, 0))
-        pygame.display.flip()
-        
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_surface = pygame.surfarray.make_surface(frame)
+            screen.blit(frame_surface, (0, 0))
+            pygame.display.flip()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                # Exibir tela de loading ao sair
-                for i in range(101):
-                    loading_screen(i / 100)
-                    pygame.time.delay(10)
-                
-                # Iniciar a interface.py como subprocesso
-                subprocess.Popen([sys.executable, 'interface.py'])
-
-                # Encerrar o loop e liberar a câmera sem esperar o subprocesso
-                running = False
+                if in_settings:
+                    in_settings = False  # Fecha o menu de configurações
+                else:
+                    in_settings = configuracoes.configuracoes(screen)  # Abre o menu de configurações
 
     camera.release()
     pygame.quit()

@@ -72,6 +72,7 @@ def loading_screen(loading_progress):
     pygame.display.flip()
 
 def tocar(screen, largura, altura):
+    pygame.mixer.music.stop()  # Para a música de fundo antes de iniciar o batuque
     tempo_carregamento = 4
     tempo_inicial = time.time()
 
@@ -115,6 +116,7 @@ def tocar(screen, largura, altura):
 
     camera.release()
     main()
+
 
 def sair():
     pygame.quit()

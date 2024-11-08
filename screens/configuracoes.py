@@ -24,15 +24,16 @@ def configuracoes(screen):
     titulo = fonte_titulo.render("Configurações", True, txt_color)
 
     configurando = True
+    voltar_ao_menu_inicial = False  # Variável para indicar se deve voltar ao menu inicial
+
     while configurando:
         mouse_pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                return False
+                sys.exit()
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 configurando = False
-                return False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if mudar_resolucao_rect.collidepoint(mouse_pos):
                     resolucao = menu_resolucao.config_resolucoes(screen)
@@ -44,7 +45,9 @@ def configuracoes(screen):
                         pygame.mixer.music.set_volume(volume_atual)
                 elif voltar_rect.collidepoint(mouse_pos):
                     configurando = False
-                    return False
+                elif voltar_menu_inicial_rect.collidepoint(mouse_pos):
+                    configurando = False
+                    voltar_ao_menu_inicial = True
 
         screen.fill(bg_color)
         titulo_rect = titulo.get_rect(center=(largura_tela / 2, altura_tela * 0.1))
@@ -54,11 +57,13 @@ def configuracoes(screen):
         mudar_resolucao_rect = pygame.Rect((largura_tela - largura_tela * 0.35) / 2, altura_tela * 0.25, largura_tela * 0.35, altura_tela * 0.05)
         ajustar_volume_rect = pygame.Rect((largura_tela - largura_tela * 0.35) / 2, altura_tela * 0.4, largura_tela * 0.35, altura_tela * 0.05)
         voltar_rect = pygame.Rect((largura_tela - largura_tela * 0.35) / 2, altura_tela * 0.55, largura_tela * 0.35, altura_tela * 0.05)
+        voltar_menu_inicial_rect = pygame.Rect((largura_tela - largura_tela * 0.35) / 2, altura_tela * 0.7, largura_tela * 0.35, altura_tela * 0.05)
 
         draw_button(screen, "Mudar Resolução", mudar_resolucao_rect, fonte_opcoes, mouse_pos, hover_color, txt_color)
         draw_button(screen, "Ajustar Volume", ajustar_volume_rect, fonte_opcoes, mouse_pos, hover_color, txt_color)
         draw_button(screen, "Voltar", voltar_rect, fonte_opcoes, mouse_pos, hover_color, txt_color)
+        draw_button(screen, "Voltar ao Menu Inicial", voltar_menu_inicial_rect, fonte_opcoes, mouse_pos, hover_color, txt_color)
 
         pygame.display.flip()
 
-    return True
+    return voltar_ao_menu_inicial
