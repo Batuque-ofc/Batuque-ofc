@@ -18,7 +18,7 @@ sys.stderr = open(os.devnull, 'w')
 pygame.init()
 
 # Variável de controle para o login
-usuario_logado = None  # Armazena o nome do usuário logado ou None se não houver login
+usuario_logado = None
 
 def criar_tela():
     largura = pygame.display.Info().current_w
@@ -37,8 +37,8 @@ button_exit_image = pygame.image.load("src/Images/tela inicial/sair_button.svg")
 button_login_image = pygame.image.load("src/Images/tela inicial/login_button.svg")
 button_register_image = pygame.image.load("src/Images/tela inicial/register_button.svg")
 button_tutorial_image = pygame.image.load("src/Images/tela inicial/tutorial_button.png")
-avatar_image = pygame.image.load("src/Images/tela inicial   /avatar_padrao.svg")
-avatar_image = pygame.transform.scale(avatar_image, (50, 50))  # Redimensiona o avatar
+avatar_image = pygame.image.load("src/Images/tela inicial/avatar_padrao.svg")
+avatar_image = pygame.transform.scale(avatar_image, (50, 50))
 
 # Música de fundo
 pygame.mixer.music.load("src/Images/tela inicial/drum_no_copyright.mp3")
@@ -95,7 +95,7 @@ def loading_screen(loading_progress):
     pygame.display.flip()
 
 def tocar(screen, largura, altura):
-    pygame.mixer.music.stop()  # Para a música de fundo antes de iniciar o batuque
+    pygame.mixer.music.stop()
     tempo_carregamento = 4
     tempo_inicial = time.time()
 

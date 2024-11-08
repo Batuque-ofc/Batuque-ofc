@@ -5,7 +5,7 @@ import time
 from pygame import mixer
 import pygame
 import subprocess
-from screens import configuracoes  # Importa o módulo de configurações
+from screens import configuracoes
 
 pygame.init()
 
@@ -35,14 +35,12 @@ PRETO = (0, 0, 0)
 BRANCO = (255, 255, 255)
 
 def loading_screen(loading_progress):
-    """Desenha a tela de carregamento com a barra de progresso."""
     tela.fill(PRETO)
     tela.blit(logo_image, (largura // 2 - logo_image.get_width() // 2, altura // 2 - logo_image.get_height() // 2))
     pygame.draw.rect(tela, BRANCO, (100, altura - 50, loading_progress * (largura - 200), 20))
     pygame.display.flip()
 
 def run_batuque(screen):
-    # Configurações de cor para detecção
     h_low, h_high = 146, 172
     s_low, s_high = 116, 255
     v_low, v_high = 123, 255
@@ -109,7 +107,7 @@ def run_batuque(screen):
     ROIs = [(center[0] - size[0] // 2, center[1] - size[1] // 2, center[0] + size[0] // 2, center[1] + size[1] // 2) for center, size in zip(centers, sizes)]
 
     running = True
-    in_settings = False  # Variável para controlar se o menu de configurações está ativo
+    in_settings = False
     while running:
         if not in_settings:
             ret, frame = camera.read()
@@ -150,9 +148,9 @@ def run_batuque(screen):
                 running = False
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 if in_settings:
-                    in_settings = False  # Fecha o menu de configurações
+                    in_settings = False
                 else:
-                    in_settings = configuracoes.configuracoes(screen)  # Abre o menu de configurações
+                    in_settings = configuracoes.configuracoes(screen)
 
     camera.release()
     pygame.quit()

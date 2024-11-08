@@ -24,7 +24,7 @@ def configuracoes(screen):
     titulo = fonte_titulo.render("Configurações", True, txt_color)
 
     configurando = True
-    voltar_ao_menu_inicial = False  # Variável para indicar se deve voltar ao menu inicial
+    voltar_ao_menu_inicial = False
 
     while configurando:
         mouse_pos = pygame.mouse.get_pos()
