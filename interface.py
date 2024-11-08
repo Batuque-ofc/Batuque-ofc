@@ -11,9 +11,14 @@ import screens.telaRegistro as telaRegistro
 from screens.configuracoes import configuracoes
 from screens.modulos_aprendizado import modulos_tutoriais
 
+# Redireciona erros para o lixo
 sys.stderr = open(os.devnull, 'w')
 
+# Inicialização do Pygame
 pygame.init()
+
+# Variável de controle para o login
+usuario_logado = None
 
 def criar_tela():
     largura = pygame.display.Info().current_w
@@ -32,7 +37,10 @@ button_exit_image = pygame.image.load("src/Images/tela inicial/sair_button.svg")
 button_login_image = pygame.image.load("src/Images/tela inicial/login_button.svg")
 button_register_image = pygame.image.load("src/Images/tela inicial/register_button.svg")
 button_tutorial_image = pygame.image.load("src/Images/tela inicial/tutorial_button.png")
+avatar_image = pygame.image.load("src/Images/tela inicial/avatar_padrao.svg")
+avatar_image = pygame.transform.scale(avatar_image, (50, 50))
 
+# Música de fundo
 pygame.mixer.music.load("src/Images/tela inicial/drum_no_copyright.mp3")
 pygame.mixer.music.set_volume(0.5)
 
@@ -43,7 +51,7 @@ button_text_color = (255, 255, 255)
 button_hover_color = (255, 255, 255)
 
 fonte_titulo = pygame.font.Font(None, 120)
-mensagem_boas_vindas = fonte_titulo.render("Sinta o som do batuque!", True, (255, 255, 255))
+mensagem_boas_vindas = fonte_titulo.render("Sinta o som do batuque!", True, BRANCO)
 
 def draw_button(screen, image, position, hover_color, mouse_pos):
     rect = image.get_rect(center=position)
@@ -56,13 +64,28 @@ def plot_tela_inicial():
     tela.blit(background_image, (0, 0))
     tela.blit(mensagem_boas_vindas, (largura // 2 - mensagem_boas_vindas.get_width() // 2, altura // 8))
     mouse_pos = pygame.mouse.get_pos()
-    global button_play_rect, button_settings_rect, button_exit_rect, button_login_rect, button_register_rect, button_tutorial_rect
+
+    global button_play_rect, button_settings_rect, button_exit_rect, button_login_rect, button_register_rect, button_tutorial_rect, button_logout_rect
     button_play_rect = draw_button(tela, button_play_image, (largura // 2, altura - 525), button_hover_color, mouse_pos)
     button_settings_rect = draw_button(tela, button_settings_image, (largura // 2, altura - 225), button_hover_color, mouse_pos)
     button_exit_rect = draw_button(tela, button_exit_image, (largura // 2, altura - 150), button_hover_color, mouse_pos)
     button_login_rect = draw_button(tela, button_login_image, (largura // 2, altura - 450), button_hover_color, mouse_pos)
     button_register_rect = draw_button(tela, button_register_image, (largura // 2, altura - 375), button_hover_color, mouse_pos)
     button_tutorial_rect = draw_button(tela, button_tutorial_image, (largura // 2, altura - 300), button_hover_color, mouse_pos)
+
+    # Exibir avatar e nome do usuário logado, se houver login
+    if usuario_logado:
+        tela.blit(avatar_image, (largura - 70, 10))  # Exibir avatar no canto superior direito
+        fonte_usuario = pygame.font.Font(None, 40)
+        nome_usuario = fonte_usuario.render(usuario_logado, True, BRANCO)
+        tela.blit(nome_usuario, (largura - 140, 20))
+
+        # Criar botão de logout
+        button_logout_rect = pygame.Rect(largura - 140, 70, 100, 30)
+        pygame.draw.rect(tela, (200, 0, 0), button_logout_rect, border_radius=5)
+        logout_text = fonte_usuario.render("Logout", True, BRANCO)
+        tela.blit(logout_text, (largura - 130, 75))
+
     pygame.display.flip()
 
 def loading_screen(loading_progress):
@@ -72,6 +95,7 @@ def loading_screen(loading_progress):
     pygame.display.flip()
 
 def tocar(screen, largura, altura):
+    pygame.mixer.music.stop()
     tempo_carregamento = 4
     tempo_inicial = time.time()
 
@@ -121,6 +145,7 @@ def sair():
     sys.exit()
 
 def main():
+    global usuario_logado
     plot_tela_inicial()
     if not pygame.mixer.music.get_busy():
         pygame.mixer.music.play(-1)
@@ -136,10 +161,8 @@ def main():
                 elif button_settings_rect.collidepoint(event.pos):
                     if not configuracoes(tela):
                         plot_tela_inicial()
-                elif button_login_rect.collidepoint(event.pos):
-                    logado = telaLogin.login(tela, altura, largura)
-                    if logado:
-                        tocar(tela, largura, altura)
+                elif button_login_rect.collidepoint(event.pos) and not usuario_logado:
+                    usuario_logado = telaLogin.login(tela, altura, largura)
                     plot_tela_inicial()
                 elif button_register_rect.collidepoint(event.pos):
                     telaRegistro.registrar(tela, altura, largura)
@@ -149,6 +172,10 @@ def main():
                 elif button_tutorial_rect.collidepoint(event.pos):
                     modulos_tutoriais(tela, altura, largura)
                     plot_tela_inicial()
+                elif usuario_logado and button_logout_rect.collidepoint(event.pos):
+                    usuario_logado = None  # Realiza o logout
+                    plot_tela_inicial()
+
         plot_tela_inicial()
 
 if __name__ == "__main__":
