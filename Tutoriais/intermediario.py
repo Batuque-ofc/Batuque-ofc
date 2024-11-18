@@ -6,16 +6,15 @@ from pygame import mixer
 import pygame
 import subprocess
 
+# Inicializa o pygame
+pygame.init()
+
+# Configurações da tela
+largura, altura = 1920, 1080
 PRETO = (0, 0, 0)
 BRANCO = (255, 255, 255)
-largura, altura = 1920, 1080  # Definindo a largura e altura da tela
-logo_image = pygame.image.load("src/Images/tela inicial/logo.png")
 
-def loading_screen(tela, loading_progress):
-    tela.fill(PRETO)
-    tela.blit(logo_image, (largura // 3 - logo_image.get_width() // 3.5, altura // 3 - logo_image.get_height() // 3))
-    pygame.display.flip()
-
+# Função principal do batuque
 def run_batuque(screen):
     # Configurações de cor para detecção
     h_low, h_high = 146, 172
@@ -33,10 +32,19 @@ def run_batuque(screen):
         mixer.music.load(music)
         mixer.music.play()
 
+    # Abrir a câmera
+    camera = cv2.VideoCapture(0)
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, largura)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, altura)
+
+    if not camera.isOpened():
+        print("Erro ao abrir a câmera")
+        sys.exit()
+
     # Definindo os tempos das batidas
     Caixa_times = [3.35, 4.8, 6.3, 7.8, 9.2, 10.7, 12.1, 13.6, 15.1, 16.5, 18.05, 19.5, 20.95, 22.4, 23.8, 25.3, 26.7, 28.2, 29.65, 31.15, 32.65, 34.1, 35.55]
     Chimbal_times = [2.7, 3.0, 3.4, 3.8, 4.2, 4.6, 5.0, 5.4, 5.8, 6.2, 6.6, 7.0, 7.4, 7.8, 8.2, 8.6, 9.0, 9.4, 9.8, 10.2, 10.6, 11.0, 11.4, 11.8, 12.2, 12.6, 13.0, 13.4, 13.8, 14.2, 14.6, 15.0, 15.4, 15.8, 16.2, 16.6, 17.0, 17.4, 17.8, 18.2, 18.6, 19.0, 19.4, 19.8, 20.2, 20.6, 21.0, 21.4, 21.8, 22.2, 22.6, 23.0, 23.4, 23.8, 24.2, 24.6, 25.0, 25.4, 25.8, 26.2, 26.6, 27.0, 27.4, 27.8, 28.2, 28.6, 29.0, 29.4, 29.8, 30.2, 30.6, 31.0, 31.4, 31.8, 32.2, 32.6, 33.0, 33.4, 33.8, 34.2, 34.6, 35.0]
-
+    
     last_played_time = [0, 0, 0, 0, 0]
     cooldown = 0.5  # Tempo em segundos entre toques
 
@@ -73,12 +81,13 @@ def run_batuque(screen):
             sound_played[sound_index] = False
 
         return mask
-
+    
     camera = cv2.VideoCapture(0)
     camera.set(cv2.CAP_PROP_FRAME_WIDTH, largura)
     camera.set(cv2.CAP_PROP_FRAME_HEIGHT, altura)
 
     if not camera.isOpened():
+        print("Erro ao abrir a câmera")
         sys.exit()
 
     instruments = ['Chimbal.png', 'Caixa.png', 'Bumbo.png', 'Crash.png', 'Caixa2.png']
@@ -110,8 +119,9 @@ def run_batuque(screen):
     init_mixer_and_play_music('src/sounds/Tutorial 2.wav')
 
     start_time = time.time()
-
-    tutorial_iniciado = False  # Flag para verificar se o tutorial foi iniciado
+    
+    # Variável para verificar se o tutorial está em andamento
+    tutorial_iniciado = False
     running = True
     while running:
         ret, frame = camera.read()
@@ -125,10 +135,53 @@ def run_batuque(screen):
 
         current_time = time.time() - start_time
 
+
+        if current_time < 3:  # Para o countdown de 3 segundos
+            countdown_number = str(int(4 - current_time))
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            text_size = cv2.getTextSize(countdown_number, font, 3, 5)[0]
+
+    # Criar uma imagem com fundo transparente (com 4 canais: BGRA)
+            text_img = np.zeros((text_size[1], text_size[0], 4), dtype=np.uint8)
+
+    # Colocar o texto na imagem com fundo transparente
+            cv2.putText(text_img, countdown_number, (0, text_size[1]), font, 3, (0, 0, 255, 255), 5)
+
+    # Rotacionar a imagem do texto 90 graus para a esquerda
+            rotated_text_img = cv2.rotate(text_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+    # Espelhar a imagem do texto horizontalmente
+            flipped_text_img = cv2.flip(rotated_text_img, 0)
+
+    # Dimensões do texto
+            text_h, text_w = flipped_text_img.shape[:2]
+
+    # Calcular a posição ajustada para deslocar o texto para a esquerda
+            offset_x = 100
+            offset_y = 200  # Ajuste de deslocamento no eixo X (aumente para mover mais para a esquerda)
+            flipped_text_x = max(0, int(altura * 0.5 - text_w / 2 - offset_x))
+            flipped_text_y = max(0, int(largura * 0.5 - text_h / 2 - offset_y))
+
+    # Garantir que o texto caiba dentro dos limites da tela
+            end_x = min(flipped_text_x + text_w, altura)
+            end_y = min(flipped_text_y + text_h, largura)
+
+    # Ajustar as dimensões do texto se necessário
+            cropped_flipped_text_img = flipped_text_img[:end_y - flipped_text_y, :end_x - flipped_text_x]
+
+    # Colocar a imagem do texto espelhado na tela
+            for c in range(0, 3):  # Para cada canal de cor (BGR)
+                frame[flipped_text_y:end_y, flipped_text_x:end_x, c] = np.where(
+                    cropped_flipped_text_img[:, :, 3] == 0,
+                    frame[flipped_text_y:end_y, flipped_text_x:end_x, c],
+                    cropped_flipped_text_img[:, :, c]
+                )
+
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
             roi = frame[top_y:bottom_y, top_x:bottom_x]
             mask = ROI_analysis(roi, i, pinkLower, pinkUpper)
 
+        # Atualizar batidas
         for beat_time in Caixa_times:
             if abs(current_time - beat_time) < 0.1:
                 center_x, center_y = centers[1]
@@ -141,6 +194,7 @@ def run_batuque(screen):
                 radius = int(50 + 50 * (1 - abs(current_time - beat_time) / 0.1))
                 cv2.circle(frame, (center_x, center_y), radius, (255, 0, 255), -1)
 
+        # Exibir os instrumentos primeiro
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
             roi = frame[top_y:bottom_y, top_x:bottom_x]
             overlay = instrument_images[i]
@@ -163,7 +217,6 @@ def run_batuque(screen):
         frame_surface = pygame.surfarray.make_surface(frame)
         screen.blit(frame_surface, (0, 0))
         pygame.display.flip()
-
         # Captura eventos do Pygame
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # Se a janela for fechada
@@ -176,7 +229,6 @@ def run_batuque(screen):
 
                     # Rodar interface.py após o ESC
                     subprocess.Popen(['python', 'interface.py']) 
-
     # Liberar câmera e fechar o Pygame corretamente
     camera.release()
     pygame.quit()

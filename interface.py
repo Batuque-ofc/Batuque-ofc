@@ -12,7 +12,7 @@ from screens.configuracoes import configuracoes
 from screens.modulos_aprendizado import modulos_tutoriais
 
 # Redireciona erros para o lixo
-sys.stderr = open(os.devnull, 'w')
+#sys.stderr = open(os.devnull, 'w')
 
 # Inicialização do Pygame
 pygame.init()
