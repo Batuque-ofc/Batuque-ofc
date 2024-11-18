@@ -86,7 +86,7 @@ def find_pink_centers(mask, min_area=100):
 # Função para desenhar o efeito de tocha (rastros que diminuem de tamanho)
 def draw_torch_effect(frame, baqueta_position, centers, effect_color=(0, 0, 255), max_length=100, alpha=0.5, max_radius=7):
     overlay = frame.copy()
-    
+
     # Limitar a quantidade de pontos para o rastro
     max_points = max_length
     if len(centers) > max_points:
@@ -96,11 +96,11 @@ def draw_torch_effect(frame, baqueta_position, centers, effect_color=(0, 0, 255)
     for i, center in enumerate(centers):
         # Calcular a distância da baqueta à esfera
         distance = math.sqrt((center[0] - baqueta_position[0])**2 + (center[1] - baqueta_position[1])**2)
-        
+
         # Ajustar a fórmula para controlar o tamanho dos círculos
         radius = max(7, max_radius - int(distance / 15))  # O raio diminui com a distância, ajustado para uma transição mais suave
         alpha_value = alpha * (i / len(centers))  # Graduação de transparência
-        
+
         # Desenhar o círculo diminuindo de tamanho
         cv2.circle(overlay, center, radius, effect_color, -1)
 
@@ -140,7 +140,7 @@ def run_batuque(screen):
             sound_played[sound_index] = False
 
         return mask
-    
+
     camera = cv2.VideoCapture(0)
     camera.set(cv2.CAP_PROP_FRAME_WIDTH, largura)
     camera.set(cv2.CAP_PROP_FRAME_HEIGHT, altura)
@@ -186,7 +186,7 @@ def run_batuque(screen):
 
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame = cv2.resize(frame, (altura, largura))
-        
+
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
                 roi = frame[top_y:bottom_y, top_x:bottom_x]
                 mask = ROI_analysis(roi, i, pinkLower, pinkUpper)
@@ -257,6 +257,52 @@ def run_batuque(screen):
                     in_settings = False
                 else:
                     in_settings = configuracoes.configuracoes(screen)
+
+        running = True
+        in_settings = False
+        while running:
+            if not in_settings:
+                ret, frame = camera.read()
+                if not ret:
+                    break
+
+                frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                frame = cv2.resize(frame, (altura, largura))
+
+                for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
+                    roi = frame[top_y:bottom_y, top_x:bottom_x]
+                    mask = ROI_analysis(roi, i, pinkLower, pinkUpper)
+
+                for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
+                    roi = frame[top_y:bottom_y, top_x:bottom_x]
+                    overlay = instrument_images[i]
+                    overlay_resized = cv2.resize(overlay, (roi.shape[1], roi.shape[0]))
+
+                    if overlay_resized.shape[2] == 4:
+                        b, g, r, a = cv2.split(overlay_resized)
+                        overlay_rgb = cv2.merge((b, g, r))
+                        alpha_mask = a / 255.0 * 0.5
+                        alpha_inv = 1.0 - alpha_mask
+
+                        for c in range(0, 3):
+                            frame[top_y:bottom_y, top_x:bottom_x, c] = (alpha_mask * overlay_rgb[:, :, c] +
+                                                                        alpha_inv * frame[top_y:bottom_y, top_x:bottom_x, c])
+                    else:
+                        frame[top_y:bottom_y, top_x:bottom_x] = cv2.addWeighted(overlay_resized, 0.5, roi, 0.5, 0)
+
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame_surface = pygame.surfarray.make_surface(frame)
+                screen.blit(frame_surface, (0, 0))
+                pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    if in_settings:
+                        in_settings = False
+                    else:
+                        in_settings = configuracoes.configuracoes(screen)
 
     camera.release()
     pygame.quit()
