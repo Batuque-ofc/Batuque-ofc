@@ -179,10 +179,12 @@ def run_batuque(screen):
     baqueta_position = (int(largura / 2), int(altura / 2))
     max_trail_length = 50
 
+    in_settings = False
     while running:
-        ret, frame = camera.read()
-        if not ret:
-            break
+        if not in_settings:
+            ret, frame = camera.read()
+            if not ret:
+                break
 
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame = cv2.resize(frame, (altura, largura))
@@ -236,12 +238,11 @@ def run_batuque(screen):
             if overlay_resized.shape[2] == 4:
                 b, g, r, a = cv2.split(overlay_resized)
                 overlay_rgb = cv2.merge((b, g, r))
-                alpha = a / 255.0
+                alpha_mask = a / 255.0 * 0.5
+                alpha = 1.0 - alpha_mask
                 for c in range(0, 3):
-                    frame[top_y:bottom_y, top_x:bottom_x, c] = (
-                        alpha * overlay_rgb[:, :, c] +
-                        (1 - alpha) * frame[top_y:bottom_y, top_x:bottom_x, c]
-                    )
+                    frame[top_y:bottom_y, top_x:bottom_x, c] = (alpha_mask * overlay_rgb[:, :, c] +
+                                                                alpha * frame[top_y:bottom_y, top_x:bottom_x, c])
 
         # Converte para RGB e atualiza a tela com o efeito
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -257,52 +258,6 @@ def run_batuque(screen):
                     in_settings = False
                 else:
                     in_settings = configuracoes.configuracoes(screen)
-
-        running = True
-        in_settings = False
-        while running:
-            if not in_settings:
-                ret, frame = camera.read()
-                if not ret:
-                    break
-
-                frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-                frame = cv2.resize(frame, (altura, largura))
-
-                for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
-                    roi = frame[top_y:bottom_y, top_x:bottom_x]
-                    mask = ROI_analysis(roi, i, pinkLower, pinkUpper)
-
-                for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
-                    roi = frame[top_y:bottom_y, top_x:bottom_x]
-                    overlay = instrument_images[i]
-                    overlay_resized = cv2.resize(overlay, (roi.shape[1], roi.shape[0]))
-
-                    if overlay_resized.shape[2] == 4:
-                        b, g, r, a = cv2.split(overlay_resized)
-                        overlay_rgb = cv2.merge((b, g, r))
-                        alpha_mask = a / 255.0 * 0.5
-                        alpha_inv = 1.0 - alpha_mask
-
-                        for c in range(0, 3):
-                            frame[top_y:bottom_y, top_x:bottom_x, c] = (alpha_mask * overlay_rgb[:, :, c] +
-                                                                        alpha_inv * frame[top_y:bottom_y, top_x:bottom_x, c])
-                    else:
-                        frame[top_y:bottom_y, top_x:bottom_x] = cv2.addWeighted(overlay_resized, 0.5, roi, 0.5, 0)
-
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame_surface = pygame.surfarray.make_surface(frame)
-                screen.blit(frame_surface, (0, 0))
-                pygame.display.flip()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    if in_settings:
-                        in_settings = False
-                    else:
-                        in_settings = configuracoes.configuracoes(screen)
 
     camera.release()
     pygame.quit()
