@@ -44,15 +44,6 @@ def draw_pulsating_effect(frame, roi, border_color, center_color=(128, 128, 128)
     # Criar uma camada sobreposta
     overlay = frame.copy()
 
-    # Desenhar o círculo interno preenchido com a cor cinza
-    cv2.circle(
-        overlay,
-        center,
-        radius - thickness,
-        center_color,
-        -1  # Círculo preenchido
-    )
-
     # Desenhar o círculo externo (apenas borda)
     cv2.circle(
         overlay,
@@ -82,30 +73,6 @@ def find_pink_centers(mask, min_area=100):
                 centers.append((center_x, center_y))
 
     return centers
-
-# Função para desenhar o efeito de tocha (rastros que diminuem de tamanho)
-def draw_torch_effect(frame, baqueta_position, centers, effect_color=(0, 0, 255), max_length=100, alpha=0.5, max_radius=7):
-    overlay = frame.copy()
-
-    # Limitar a quantidade de pontos para o rastro
-    max_points = max_length
-    if len(centers) > max_points:
-        centers = centers[-max_points:]
-
-    # Desenhar círculos de rastro com efeito de tocha
-    for i, center in enumerate(centers):
-        # Calcular a distância da baqueta à esfera
-        distance = math.sqrt((center[0] - baqueta_position[0])**2 + (center[1] - baqueta_position[1])**2)
-
-        # Ajustar a fórmula para controlar o tamanho dos círculos
-        radius = max(7, max_radius - int(distance / 15))  # O raio diminui com a distância, ajustado para uma transição mais suave
-        alpha_value = alpha * (i / len(centers))  # Graduação de transparência
-
-        # Desenhar o círculo diminuindo de tamanho
-        cv2.circle(overlay, center, radius, effect_color, -1)
-
-    # Mesclar o rastro com o frame
-    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
 def run_batuque(screen):
     h_low, h_high = 146, 172
@@ -174,10 +141,16 @@ def run_batuque(screen):
     ROIs = [(center[0] - size[0] // 2, center[1] - size[1] // 2, center[0] + size[0] // 2, center[1] + size[1] // 2) for center, size in zip(centers, sizes)]
 
     running = True
-    effect_timers = [0] * len(ROIs)
-    trail_centers = []
-    baqueta_position = (int(largura / 2), int(altura / 2))
-    max_trail_length = 50
+
+    scaling_factors = [1.0] * len(instrument_images)
+    scaling_speed = 0.1  # Velocidade de expansão ao tamanho original
+    impact_scale = 0.7  # Fator de escala ao ser atingido (contrai)
+
+    def apply_animation_effect(index):
+        # Aplica o fator de contração ao ser atingido
+        scaling_factors[index] = impact_scale
+
+    effect_timers = [0] * len(ROIs)  # Temporizadores para efeitos
 
     in_settings = False
     while running:
@@ -189,30 +162,63 @@ def run_batuque(screen):
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame = cv2.resize(frame, (altura, largura))
 
+        # Verifica ROIs e ativa efeitos
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
-                roi = frame[top_y:bottom_y, top_x:bottom_x]
-                mask = ROI_analysis(roi, i, pinkLower, pinkUpper)
+            roi = frame[top_y:bottom_y, top_x:bottom_x]
+            mask = ROI_analysis(roi, i, pinkLower, pinkUpper)
 
-        mask = calc_mask(frame, pinkLower, pinkUpper)
+            if sound_played[i]:
+                apply_animation_effect(i)  # Ativa contração ao detectar som
 
-        pink_centers = find_pink_centers(mask)
+        # Aplica efeitos visuais e rastros
+        for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
+            center_x, center_y = centers[i]
+            size_x, size_y = sizes[i]
 
-        # Adicionar novas esferas à lista de rastro
-        for center in pink_centers:
-            if center not in trail_centers:
-                trail_centers.append({'center': center, 'age': 0})  # 'age' controla quanto tempo a esfera fica na tela
+            # Expande progressivamente até o tamanho original
+            scaling_factors[i] = min(1.0, scaling_factors[i] + scaling_speed)
 
-        # Atualizar a idade das esferas e remover as mais antigas
-        for entry in trail_centers[:]:
-            entry['age'] += 1
-            if entry['age'] > max_trail_length:  # Se uma esfera ficou tempo suficiente sem ser detectada, ela será removida
-                trail_centers.remove(entry)
+            # Calcula as novas dimensões com base no fator de escala
+            new_width = int(size_x * scaling_factors[i])
+            new_height = int(size_y * scaling_factors[i])
 
-        # Desenhar o rastro com efeito de tocha
-        trail_positions = [entry['center'] for entry in trail_centers]  # Pega só as posições
-        draw_torch_effect(frame, baqueta_position, trail_positions, effect_color=VERMELHO)  # Efeito de tocha com rastro vermelho
+            # Evita dimensões inválidas
+            new_width = max(1, new_width)
+            new_height = max(1, new_height)
 
-        # Para cada baqueta, verificar se está sendo detectada
+            # Redimensiona o overlay
+            scaled_overlay = cv2.resize(instrument_images[i], (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+
+            # Calcula as posições para o overlay redimensionado
+            new_top_x = max(0, center_x - new_width // 2)
+            new_top_y = max(0, center_y - new_height // 2)
+            new_bottom_x = min(frame.shape[1], center_x + new_width // 2)
+            new_bottom_y = min(frame.shape[0], center_y + new_height // 2)
+
+            # Ajusta as dimensões do ROI
+            roi_height = new_bottom_y - new_top_y
+            roi_width = new_bottom_x - new_top_x
+
+            # Processa imagens com transparência
+            if scaled_overlay.shape[2] == 4:  # Verifica se o overlay tem canal alpha (RGBA)
+                b, g, r, a = cv2.split(scaled_overlay)
+                overlay_rgb = cv2.merge((b, g, r))
+                alpha_mask = a / 255.0 * 0.5  # Normaliza o canal alpha para [0, 1]
+
+                # Garante que o ROI e o overlay tenham exatamente as mesmas dimensões
+                overlay_rgb = cv2.resize(overlay_rgb, (roi_width, roi_height))
+                alpha_mask = cv2.resize(alpha_mask, (roi_width, roi_height))
+
+                # Combina o overlay com o frame usando o alpha
+                for c in range(3):  # Aplica a transparência para os canais B, G, R
+                    frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x, c] = (
+                        overlay_rgb[:, :, c] * alpha_mask +
+                        frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x, c] * (1 - alpha_mask)
+                    )
+            else:  # Caso não tenha canal alpha, aplica normalmente
+                frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x] = cv2.addWeighted(
+                    scaled_overlay, 0.5, frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x], 0.5, 0
+                )
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
             roi = frame[top_y:bottom_y, top_x:bottom_x]
             if np.sum(calc_mask(roi, pinkLower, pinkUpper)) > 30:
@@ -220,7 +226,7 @@ def run_batuque(screen):
             else:
                 effect_timers[i] = max(0, effect_timers[i] - 1)
 
-            # Desenha o efeito pulsante (quando a baqueta está detectada)
+            # Desenha o efeito pulsante
             if effect_timers[i] > 0:
                 draw_pulsating_effect(
                     frame,
@@ -231,20 +237,7 @@ def run_batuque(screen):
                     duration=7
                 )
 
-            # Desenha as imagens dos instrumentos
-            overlay = instrument_images[i]
-            overlay_resized = cv2.resize(overlay, (bottom_x - top_x, bottom_y - top_y))
-
-            if overlay_resized.shape[2] == 4:
-                b, g, r, a = cv2.split(overlay_resized)
-                overlay_rgb = cv2.merge((b, g, r))
-                alpha_mask = a / 255.0 * 0.5
-                alpha = 1.0 - alpha_mask
-                for c in range(0, 3):
-                    frame[top_y:bottom_y, top_x:bottom_x, c] = (alpha_mask * overlay_rgb[:, :, c] +
-                                                                alpha * frame[top_y:bottom_y, top_x:bottom_x, c])
-
-        # Converte para RGB e atualiza a tela com o efeito
+        # Atualização do frame e eventos
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_surface = pygame.surfarray.make_surface(frame)
         screen.blit(frame_surface, (0, 0))
