@@ -81,6 +81,8 @@ def run_batuque(screen):
     pinkLower = (h_low, s_low, v_low)
     pinkUpper = (h_high, s_high, v_high)
 
+    prev_mask = [None] * len(drum_sounds)  # Armazena máscaras anteriores para calcular a velocidade
+
     last_played_time = [0, 0, 0, 0, 0]
     cooldown = 0.5  # Tempo em segundos entre toques
     sound_played = [False, False, False, False, False]
@@ -97,12 +99,28 @@ def run_batuque(screen):
         return cv2.inRange(hsv, lower, upper)
 
     def ROI_analysis(roi, sound_index, lower, upper, min_value=30):
+        nonlocal prev_mask  # Garante que estamos utilizando a variável global "prev_mask"
         mask = calc_mask(roi, lower, upper)
-        summation = np.sum(mask)
+        intensity = np.sum(mask)  # Soma dos pixels ativados na máscara
 
-        if summation >= min_value:
+        # Calcula velocidade como a diferença entre quadros consecutivos
+        if prev_mask[sound_index] is not None:
+            motion_intensity = np.sum(cv2.absdiff(mask, prev_mask[sound_index]))
+        else:
+            motion_intensity = 0
+
+        prev_mask[sound_index] = mask  # Atualiza a máscara anterior
+
+        # Calcula o volume com base na intensidade ou velocidade
+        volume = max(0.1, min(1.0, intensity / (roi.shape[0] * roi.shape[1] * 255)))  # Volume baseado na intensidade da máscara
+        volume += min(0.5, motion_intensity / (roi.shape[0] * roi.shape[1] * 255 * 2))  # Adiciona com base na velocidade
+        volume = min(1.0, volume)  # Garante que o volume esteja no intervalo [0.0, 1.0]
+
+        if intensity >= min_value:  # Verifica se a intensidade mínima foi atingida
+            drum_sounds[sound_index].set_volume(volume)  # Ajusta o volume
             if not sound_played[sound_index]:
-                state_machine(sound_index)
+                drum_sounds[sound_index].play()  # Toca o som
+                sound_played[sound_index] = True
         else:
             sound_played[sound_index] = False
 
