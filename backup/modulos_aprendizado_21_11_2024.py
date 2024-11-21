@@ -1,16 +1,16 @@
 import pygame
 import sys
+from Tutoriais.iniciante import run_batuque as run_batuque_iniciante
+from Tutoriais.intermediario import run_batuque as run_batuque_intermediario
+from Tutoriais.avançado import run_batuque as run_batuque_avancado
 import time
-from Tutoriais.main_tutorial import executar_tutorial  # Função principal para executar qualquer tutorial
-from Tutoriais.tutorial_config import TUTORIAIS  # Importa a lista de tutoriais
 
-# Inicializa o pygame
 pygame.init()
 
-# Definições de cores e configuração da tela
+# Definição de cores e inicialização
 PRETO = (0, 0, 0)
 BRANCO = (255, 255, 255)
-HOVER_COLOR = (200, 200, 200)
+hover_color = (200, 200, 200)
 
 def criar_tela():
     largura = pygame.display.Info().current_w
@@ -37,7 +37,7 @@ icon_avancado = pygame.transform.scale(icon_avancado, (80, 80))
 def draw_button(icon, text, sub_text, position, tela, mouse_pos):
     x, y = position
     width, height = 700, 150
-    color = HOVER_COLOR if pygame.Rect(x, y, width, height).collidepoint(mouse_pos) else BRANCO
+    color = hover_color if pygame.Rect(x, y, width, height).collidepoint(mouse_pos) else BRANCO
 
     font_text = pygame.font.Font(None, 50)
     font_sub_text = pygame.font.Font(None, 35)
@@ -57,21 +57,26 @@ def draw_button(icon, text, sub_text, position, tela, mouse_pos):
 
 # Tela de carregamento com animação
 def loading_screen(tela):
-    for _ in range(3):
+    for i in range(3):
         tela.fill(PRETO)
         tela.blit(logo_image, (largura // 2 - logo_image.get_width() // 2, altura // 2 - logo_image.get_height() // 2))
         pygame.display.flip()
         time.sleep(0.5)
 
-# Função para executar um tutorial
-def iniciar_tutorial(tela, tutorial_name):
-    if tutorial_name in TUTORIAIS:
-        loading_screen(tela)
-        executar_tutorial(tela, tutorial_name)
-    else:
-        print(f"Erro: Tutorial '{tutorial_name}' não encontrado!")
+# Funções para tutoriais
+def tutorial_iniciante(tela):
+    loading_screen(tela)
+    return run_batuque_iniciante(tela)
 
-# Função principal dos módulos de aprendizado
+def tutorial_intermediario(tela):
+    loading_screen(tela)
+    return run_batuque_intermediario(tela)
+
+def tutorial_avancado(tela):
+    loading_screen(tela)
+    return run_batuque_avancado(tela)
+
+# Função principal dos tutoriais
 def modulos_tutoriais(tela, altura, largura):
     running = True
     button_return_rect = return_image.get_rect(topleft=(50, altura - return_image.get_height() - 750))
@@ -96,11 +101,11 @@ def modulos_tutoriais(tela, altura, largura):
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if btn_iniciante.collidepoint(mouse_pos):
-                    iniciar_tutorial(tela, "iniciante")
+                    tutorial_iniciante(tela)
                 elif btn_intermediario.collidepoint(mouse_pos):
-                    iniciar_tutorial(tela, "intermediario")
+                    tutorial_intermediario(tela)
                 elif btn_avancado.collidepoint(mouse_pos):
-                    iniciar_tutorial(tela, "avancado")
+                    tutorial_avancado(tela)
                 elif button_return_rect.collidepoint(mouse_pos):
                     return False
 

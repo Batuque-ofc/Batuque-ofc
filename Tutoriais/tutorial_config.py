@@ -1,5 +1,4 @@
-# Configurações para cada tutorial
-tutorials = {
+TUTORIAIS = {
     "iniciante": {
         "music": "src/sounds/Tutorial 1.wav",
         "Bumbo_times": [2.6, 3, 4.1, 4.4],
