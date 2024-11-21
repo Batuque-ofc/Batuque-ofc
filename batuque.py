@@ -5,7 +5,7 @@ import time
 from pygame import mixer
 import pygame
 import math
-from screens import configuracoes
+from screens.configuracoes import configuracoes
 
 pygame.init()
 
@@ -81,6 +81,8 @@ def run_batuque(screen):
     pinkLower = (h_low, s_low, v_low)
     pinkUpper = (h_high, s_high, v_high)
 
+    prev_mask = [None] * len(drum_sounds)  # Armazena máscaras anteriores para calcular a velocidade
+
     last_played_time = [0, 0, 0, 0, 0]
     cooldown = 0.5  # Tempo em segundos entre toques
     sound_played = [False, False, False, False, False]
@@ -97,12 +99,28 @@ def run_batuque(screen):
         return cv2.inRange(hsv, lower, upper)
 
     def ROI_analysis(roi, sound_index, lower, upper, min_value=30):
+        nonlocal prev_mask  # Garante que estamos utilizando a variável global "prev_mask"
         mask = calc_mask(roi, lower, upper)
-        summation = np.sum(mask)
+        intensity = np.sum(mask)  # Soma dos pixels ativados na máscara
 
-        if summation >= min_value:
+        # Calcula velocidade como a diferença entre quadros consecutivos
+        if prev_mask[sound_index] is not None:
+            motion_intensity = np.sum(cv2.absdiff(mask, prev_mask[sound_index]))
+        else:
+            motion_intensity = 0
+
+        prev_mask[sound_index] = mask  # Atualiza a máscara anterior
+
+        # Calcula o volume com base na intensidade ou velocidade
+        volume = max(0.1, min(1.0, intensity / (roi.shape[0] * roi.shape[1] * 255)))  # Volume baseado na intensidade da máscara
+        volume += min(0.5, motion_intensity / (roi.shape[0] * roi.shape[1] * 255 * 2))  # Adiciona com base na velocidade
+        volume = min(1.0, volume)  # Garante que o volume esteja no intervalo [0.0, 1.0]
+
+        if intensity >= min_value:  # Verifica se a intensidade mínima foi atingida
+            drum_sounds[sound_index].set_volume(volume)  # Ajusta o volume
             if not sound_played[sound_index]:
-                state_machine(sound_index)
+                drum_sounds[sound_index].play()  # Toca o som
+                sound_played[sound_index] = True
         else:
             sound_played[sound_index] = False
 
@@ -141,84 +159,80 @@ def run_batuque(screen):
     ROIs = [(center[0] - size[0] // 2, center[1] - size[1] // 2, center[0] + size[0] // 2, center[1] + size[1] // 2) for center, size in zip(centers, sizes)]
 
     running = True
+    return_to_menu = False  # Variável de controle para retornar ao menu inicial
 
     scaling_factors = [1.0] * len(instrument_images)
     scaling_speed = 0.1  # Velocidade de expansão ao tamanho original
     impact_scale = 0.7  # Fator de escala ao ser atingido (contrai)
 
     def apply_animation_effect(index):
-        # Aplica o fator de contração ao ser atingido
         scaling_factors[index] = impact_scale
 
-    effect_timers = [0] * len(ROIs)  # Temporizadores para efeitos
+    effect_timers = [0] * len(ROIs)
 
-    in_settings = False
     while running:
-        if not in_settings:
-            ret, frame = camera.read()
-            if not ret:
-                break
+        ret, frame = camera.read()
+        if not ret:
+            break
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if configuracoes(screen):  # Retorna ao menu inicial
+                    return_to_menu = True
+                    running = False
 
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame = cv2.resize(frame, (altura, largura))
 
-        # Verifica ROIs e ativa efeitos
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
             roi = frame[top_y:bottom_y, top_x:bottom_x]
             mask = ROI_analysis(roi, i, pinkLower, pinkUpper)
 
             if sound_played[i]:
-                apply_animation_effect(i)  # Ativa contração ao detectar som
+                apply_animation_effect(i)
 
-        # Aplica efeitos visuais e rastros
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
             center_x, center_y = centers[i]
             size_x, size_y = sizes[i]
 
-            # Expande progressivamente até o tamanho original
             scaling_factors[i] = min(1.0, scaling_factors[i] + scaling_speed)
 
-            # Calcula as novas dimensões com base no fator de escala
             new_width = int(size_x * scaling_factors[i])
             new_height = int(size_y * scaling_factors[i])
 
-            # Evita dimensões inválidas
             new_width = max(1, new_width)
             new_height = max(1, new_height)
 
-            # Redimensiona o overlay
             scaled_overlay = cv2.resize(instrument_images[i], (new_width, new_height), interpolation=cv2.INTER_CUBIC)
 
-            # Calcula as posições para o overlay redimensionado
             new_top_x = max(0, center_x - new_width // 2)
             new_top_y = max(0, center_y - new_height // 2)
             new_bottom_x = min(frame.shape[1], center_x + new_width // 2)
             new_bottom_y = min(frame.shape[0], center_y + new_height // 2)
 
-            # Ajusta as dimensões do ROI
             roi_height = new_bottom_y - new_top_y
             roi_width = new_bottom_x - new_top_x
 
-            # Processa imagens com transparência
-            if scaled_overlay.shape[2] == 4:  # Verifica se o overlay tem canal alpha (RGBA)
+            if scaled_overlay.shape[2] == 4:
                 b, g, r, a = cv2.split(scaled_overlay)
                 overlay_rgb = cv2.merge((b, g, r))
-                alpha_mask = a / 255.0 * 0.5  # Normaliza o canal alpha para [0, 1]
+                alpha_mask = a / 255.0 * 0.5
 
-                # Garante que o ROI e o overlay tenham exatamente as mesmas dimensões
                 overlay_rgb = cv2.resize(overlay_rgb, (roi_width, roi_height))
                 alpha_mask = cv2.resize(alpha_mask, (roi_width, roi_height))
 
-                # Combina o overlay com o frame usando o alpha
-                for c in range(3):  # Aplica a transparência para os canais B, G, R
+                for c in range(3):
                     frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x, c] = (
-                        overlay_rgb[:, :, c] * alpha_mask +
-                        frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x, c] * (1 - alpha_mask)
+                            overlay_rgb[:, :, c] * alpha_mask +
+                            frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x, c] * (1 - alpha_mask)
                     )
-            else:  # Caso não tenha canal alpha, aplica normalmente
+            else:
                 frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x] = cv2.addWeighted(
                     scaled_overlay, 0.5, frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x], 0.5, 0
                 )
+
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
             roi = frame[top_y:bottom_y, top_x:bottom_x]
             if np.sum(calc_mask(roi, pinkLower, pinkUpper)) > 30:
@@ -226,7 +240,6 @@ def run_batuque(screen):
             else:
                 effect_timers[i] = max(0, effect_timers[i] - 1)
 
-            # Desenha o efeito pulsante
             if effect_timers[i] > 0:
                 draw_pulsating_effect(
                     frame,
@@ -237,20 +250,10 @@ def run_batuque(screen):
                     duration=7
                 )
 
-        # Atualização do frame e eventos
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_surface = pygame.surfarray.make_surface(frame)
         screen.blit(frame_surface, (0, 0))
         pygame.display.flip()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                if in_settings:
-                    in_settings = False
-                else:
-                    in_settings = configuracoes.configuracoes(screen)
-
     camera.release()
-    pygame.quit()
+    return return_to_menu

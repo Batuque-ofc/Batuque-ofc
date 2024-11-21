@@ -95,7 +95,9 @@ def loading_screen(loading_progress):
     pygame.display.flip()
 
 def tocar(screen, largura, altura):
-    pygame.mixer.music.stop()
+    pygame.mixer.music.stop()  # Para a música antes do jogo começar
+
+    # Mostra a tela de carregamento
     tempo_carregamento = 4
     tempo_inicial = time.time()
 
@@ -107,38 +109,42 @@ def tocar(screen, largura, altura):
         if tempo_decorrido >= tempo_carregamento:
             break
 
-    camera = cv2.VideoCapture(0)
-    clock = pygame.time.Clock()
-    frame = cycle(run_batuque(screen))
-    menu_aberto = False
-    voltar_ao_menu_principal = False
 
-    while not voltar_ao_menu_principal:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                menu_aberto = not menu_aberto
-                if menu_aberto:
-                    configuracoes(screen)
-                else:
-                    voltar_ao_menu_principal = True
+    # Executa o jogo Batuque
+    voltar_ao_menu_inicial = run_batuque(screen)  # Chama o jogo e captura o retorno
+    if voltar_ao_menu_inicial:  # Se o jogo retornar ao menu inicial
+        return True  # Indica para retornar ao menu inicial
 
-        if not menu_aberto:
-            ret, frame = camera.read()
-            if not ret:
-                break
+    return False  # Caso contrário, permanece no jogo
 
-            resized_frame = cv2.resize(frame, (1080, 1920))
-            screen.fill(PRETO)
-            frame_surface = pygame.surfarray.make_surface(cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB))
-            screen.blit(frame_surface, (0, 0))
-            pygame.display.flip()
-            clock.tick(30)
 
-    camera.release()
-    main()
+def sair():
+    pygame.quit()
+    sys.exit()
+
+def tocar(screen, largura, altura):
+    pygame.mixer.music.stop()  # Para a música antes do jogo começar
+
+    # Mostra a tela de carregamento
+    tempo_carregamento = 4
+    tempo_inicial = time.time()
+
+    while True:
+        tempo_atual = time.time()
+        tempo_decorrido = tempo_atual - tempo_inicial
+        loading_progress = min(tempo_decorrido / tempo_carregamento, 1)
+        loading_screen(loading_progress)
+        if tempo_decorrido >= tempo_carregamento:
+            break
+
+
+    # Executa o jogo Batuque
+    voltar_ao_menu_inicial = run_batuque(screen)  # Chama o jogo e captura o retorno
+    if voltar_ao_menu_inicial:  # Se o jogo retornar ao menu inicial
+        return True  # Indica para retornar ao menu inicial
+
+    return False  # Caso contrário, permanece no jogo
+
 
 def sair():
     pygame.quit()
@@ -147,8 +153,10 @@ def sair():
 def main():
     global usuario_logado
     plot_tela_inicial()
+
     if not pygame.mixer.music.get_busy():
         pygame.mixer.music.play(-1)
+
     running = True
     while running:
         mouse_pos = pygame.mouse.get_pos()
@@ -157,9 +165,12 @@ def main():
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if button_play_rect.collidepoint(event.pos):
-                    tocar(tela, largura, altura)
+                    # Inicia o jogo
+                    voltar_ao_menu = tocar(tela, largura, altura)
+                    if voltar_ao_menu:
+                        plot_tela_inicial()  # Redesenha a tela inicial
                 elif button_settings_rect.collidepoint(event.pos):
-                    if not configuracoes(tela):
+                    if not configuracoes(tela):  # Configurações concluídas
                         plot_tela_inicial()
                 elif button_login_rect.collidepoint(event.pos) and not usuario_logado:
                     usuario_logado = telaLogin.login(tela, altura, largura)
@@ -173,7 +184,7 @@ def main():
                     modulos_tutoriais(tela, altura, largura)
                     plot_tela_inicial()
                 elif usuario_logado and button_logout_rect.collidepoint(event.pos):
-                    usuario_logado = None  # Realiza o logout
+                    usuario_logado = None
                     plot_tela_inicial()
 
         plot_tela_inicial()
