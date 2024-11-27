@@ -31,6 +31,7 @@ drum_sounds = [
 PRETO = (0, 0, 0)
 BRANCO = (255, 255, 255)
 VERMELHO = (0, 0, 255)
+VERDE = (0, 255, 0)
 
 def draw_pulsating_effect(frame, roi, border_color, center_color=(128, 128, 128), intensity=1.0, time_left=1.0, duration=10, thickness=5):
     top_x, top_y, bottom_x, bottom_y = roi
@@ -74,6 +75,15 @@ def find_pink_centers(mask, min_area=100):
 
     return centers
 
+def loading_screen(screen):
+    tempo_carregamento = 2  # Reduzir o tempo de carregamento para 2 segundos
+    tempo_inicial = time.time()
+    while time.time() - tempo_inicial < tempo_carregamento:
+        screen.fill(PRETO)
+        loading_progress = (time.time() - tempo_inicial) / tempo_carregamento
+        pygame.draw.rect(screen, BRANCO, (100, altura - 50, loading_progress * (largura - 200), 20))
+        pygame.display.flip()
+
 def executar_tutorial(screen, tutorial_name):
     if tutorial_name not in TUTORIAIS:
         print(f"Tutorial {tutorial_name} não encontrado.")
@@ -84,10 +94,15 @@ def executar_tutorial(screen, tutorial_name):
     Bumbo_times = tutorial_data["Bumbo_times"]
     Caixa_times = tutorial_data["Caixa_times"]
     Chimbal_times = tutorial_data["Chimbal_times"]
+    Caixa2_times = tutorial_data["Caixa2_times"]  # Novos tempos de batida da Caixa2
+    Crash_times = tutorial_data["Crash_times"]    # Novos tempos de batida do Crash
 
     mixer.init()
     mixer.music.load(music)
-    mixer.music.play()
+
+    def restart_music():
+        mixer.music.stop()
+        mixer.music.play()
 
     camera = cv2.VideoCapture(0)
     camera.set(cv2.CAP_PROP_FRAME_WIDTH, largura)
@@ -136,7 +151,12 @@ def executar_tutorial(screen, tutorial_name):
     font = pygame.font.Font(None, 60)
     floating_texts = []
 
-    restart_button_rect = pygame.Rect(largura - 200, 50, 150, 50)
+    restart_button_rect = pygame.Rect(largura - 200, altura - 100, 150, 50)
+
+    # Tela de carregamento
+    loading_screen(screen)
+    tempo_inicial = time.time()
+    restart_music()
 
     while running:
         ret, frame = camera.read()
@@ -154,76 +174,67 @@ def executar_tutorial(screen, tutorial_name):
                 if restart_button_rect.collidepoint(event.pos):
                     score = 0
                     floating_texts.clear()
+                    loading_screen(screen)
+                    tempo_inicial = time.time()
+                    restart_music()
 
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame = cv2.resize(frame, (altura, largura))
 
+        current_time = time.time() - tempo_inicial
+
+        # Atualizar batidas
+        for beat_time in Bumbo_times:
+            if abs(current_time - beat_time) < 0.1:
+                center_x, center_y = centers[2]
+                radius = int(50 + 50 * (1 - abs(current_time - beat_time) / 0.1))
+                cv2.circle(frame, (center_x, center_y), radius, VERDE, -1)
+                score += 1
+
+        for beat_time in Caixa_times:
+            if abs(current_time - beat_time) < 0.1:
+                center_x, center_y = centers[1]
+                radius = int(50 + 50 * (1 - abs(current_time - beat_time) / 0.1))
+                cv2.circle(frame, (center_x, center_y), radius, VERDE, -1)
+                score += 1
+
+        for beat_time in Chimbal_times:
+            if abs(current_time - beat_time) < 0.1:
+                center_x, center_y = centers[0]
+                radius = int(50 + 50 * (1 - abs(current_time - beat_time) / 0.1))
+                cv2.circle(frame, (center_x, center_y), radius, VERDE, -1)
+                score += 1
+
+        for beat_time in Caixa2_times:
+            if abs(current_time - beat_time) < 0.1:
+                center_x, center_y = centers[4]  # Caixa2
+                radius = int(50 + 50 * (1 - abs(current_time - beat_time) / 0.1))
+                cv2.circle(frame, (center_x, center_y), radius, VERDE, -1)
+                score += 1
+
+        for beat_time in Crash_times:
+            if abs(current_time - beat_time) < 0.1:
+                center_x, center_y = centers[3]  # Crash
+                radius = int(50 + 50 * (1 - abs(current_time - beat_time) / 0.1))
+                cv2.circle(frame, (center_x, center_y), radius, VERDE, -1)
+                score += 1
+
         for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
             roi = frame[top_y:bottom_y, top_x:bottom_x]
-            mask = calc_mask(roi, (146, 116, 123), (172, 255, 255))
+            overlay = instrument_images[i]
+            overlay_resized = cv2.resize(overlay, (roi.shape[1], roi.shape[0]))
 
-            if np.sum(mask) > 30:
-                effect_timers[i] = 7
-                apply_animation_effect(i)
-                score += 1
-                floating_texts.append({"text": "+1", "pos": (top_x, top_y), "time": time.time()})
-
-        for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
-            center_x, center_y = centers[i]
-            size_x, size_y = sizes[i]
-
-            scaling_factors[i] = min(1.0, scaling_factors[i] + scaling_speed)
-
-            new_width = int(size_x * scaling_factors[i])
-            new_height = int(size_y * scaling_factors[i])
-
-            new_width = max(1, new_width)
-            new_height = max(1, new_height)
-
-            scaled_overlay = cv2.resize(instrument_images[i], (new_width, new_height), interpolation=cv2.INTER_CUBIC)
-
-            new_top_x = max(0, center_x - new_width // 2)
-            new_top_y = max(0, center_y - new_height // 2)
-            new_bottom_x = min(frame.shape[1], center_x + new_width // 2)
-            new_bottom_y = min(frame.shape[0], center_y + new_height // 2)
-
-            roi_height = new_bottom_y - new_top_y
-            roi_width = new_bottom_x - new_top_x
-
-            if scaled_overlay.shape[2] == 4:
-                b, g, r, a = cv2.split(scaled_overlay)
+            if overlay_resized.shape[2] == 4:
+                b, g, r, a = cv2.split(overlay_resized)
                 overlay_rgb = cv2.merge((b, g, r))
                 alpha_mask = a / 255.0 * 0.5
+                alpha_inv = 1.0 - alpha_mask
 
-                overlay_rgb = cv2.resize(overlay_rgb, (roi_width, roi_height))
-                alpha_mask = cv2.resize(alpha_mask, (roi_width, roi_height))
-
-                for c in range(3):
-                    frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x, c] = (
-                            overlay_rgb[:, :, c] * alpha_mask +
-                            frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x, c] * (1 - alpha_mask)
-                    )
+                for c in range(0, 3):
+                    frame[top_y:bottom_y, top_x:bottom_x, c] = (alpha_mask * overlay_rgb[:, :, c] +
+                                                                alpha_inv * frame[top_y:bottom_y, top_x:bottom_x, c])
             else:
-                frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x] = cv2.addWeighted(
-                    scaled_overlay, 0.5, frame[new_top_y:new_bottom_y, new_top_x:new_bottom_x], 0.5, 0
-                )
-
-        for i, (top_x, top_y, bottom_x, bottom_y) in enumerate(ROIs):
-            roi = frame[top_y:bottom_y, top_x:bottom_x]
-            if np.sum(calc_mask(roi, (146, 116, 123), (172, 255, 255))) > 30:
-                effect_timers[i] = 7
-            else:
-                effect_timers[i] = max(0, effect_timers[i] - 1)
-
-            if effect_timers[i] > 0:
-                draw_pulsating_effect(
-                    frame,
-                    (top_x, top_y, bottom_x, bottom_y),
-                    border_color=(255, 0, 255),
-                    intensity=1.0,
-                    time_left=effect_timers[i],
-                    duration=7
-                )
+                frame[top_y:bottom_y, top_x:bottom_x] = cv2.addWeighted(overlay_resized, 0.5, roi, 0.5, 0)
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_surface = pygame.surfarray.make_surface(frame)
@@ -243,11 +254,12 @@ def executar_tutorial(screen, tutorial_name):
 
         pygame.draw.rect(screen, (255, 0, 0), restart_button_rect)
         restart_text = font.render("Reiniciar", True, (255, 255, 255))
-        screen.blit(restart_text, (largura - 185, 60))
+        screen.blit(restart_text, (largura - 185, altura - 90))
 
         pygame.display.flip()
 
     camera.release()
+    mixer.music.stop()
     return return_to_menu
 
 if __name__ == "__main__":
