@@ -1,0 +1,3 @@
+ideia v1:
+
+fazer um main_totorial com o Código do tutorial e seu funcionamento.
